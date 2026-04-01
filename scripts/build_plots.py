@@ -94,8 +94,9 @@ def plot_hotspot_comparison(df: pd.DataFrame, out_file: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build report plots from experiment CSV files")
-    parser.add_argument("--results-dir", default="results", help="Directory with CSV outputs")
-    parser.add_argument("--plots-dir", default="results/plots", help="Output directory for PNG plots")
+    default_results_dir = Path(__file__).resolve().parent.parent / "results"
+    parser.add_argument("--results-dir", default=str(default_results_dir), help="Directory with CSV outputs")
+    parser.add_argument("--plots-dir", default=str(default_results_dir / "plots"), help="Output directory for PNG plots")
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)

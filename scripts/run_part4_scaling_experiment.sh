@@ -7,10 +7,12 @@ set -euo pipefail
 # - NGINX configured with direct/rest/nginx/ticket_lb.conf
 # - Python environment ready
 
-RESULTS_DIR="results"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}"/.. && pwd)"
+RESULTS_DIR="${PROJECT_ROOT}/results"
 OUT_FILE="${RESULTS_DIR}/direct_scaling_results.csv"
-UNNUMBERED_BENCH="benchmarks/benchmark_unnumbered_20000.txt"
-NUMBERED_BENCH="benchmarks/benchmark_numbered_60000.txt"
+UNNUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt"
+NUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_60000.txt"
 BASE_URL="http://127.0.0.1:8080"
 NGINX_CONF_PATH="/etc/nginx/conf.d/ticket_lb.conf"
 
@@ -76,18 +78,18 @@ run_and_append() {
 
 for workers in 1 2 4; do
     echo "Running with ${workers} workers"
-    bash scripts/stop_direct_workers.sh || true
-    bash scripts/start_direct_workers.sh "${workers}"
+    bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${workers}"
     write_nginx_conf "${workers}"
     sleep 2
 
     curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
-    run_and_append "${workers}" "unnumbered" "python3 scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+    run_and_append "${workers}" "unnumbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
 
     curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
-    run_and_append "${workers}" "numbered" "python3 scripts/benchmark_numbered_rest.py --file ${NUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+    run_and_append "${workers}" "numbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_numbered_rest.py --file ${NUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
 done
 
-bash scripts/stop_direct_workers.sh || true
+bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
 
 echo "Results written to ${OUT_FILE}"

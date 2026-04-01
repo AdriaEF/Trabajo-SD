@@ -4,10 +4,12 @@ set -euo pipefail
 # Runs hotspot experiment (80/5) for numbered model in both architectures.
 # Output CSV is suitable for direct vs indirect comparison under contention.
 
-RESULTS_DIR="results"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}"/.. && pwd)"
+RESULTS_DIR="${PROJECT_ROOT}/results"
 OUT_FILE="${RESULTS_DIR}/hotspot_comparison_results.csv"
-BASE_NUMBERED_BENCH="benchmarks/benchmark_numbered_60000.txt"
-HOTSPOT_BENCH="benchmarks/benchmark_numbered_hotspot_80_5.txt"
+BASE_NUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_60000.txt"
+HOTSPOT_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_hotspot_80_5.txt"
 BASE_URL="http://127.0.0.1:8080"
 NGINX_CONF_PATH="/etc/nginx/conf.d/ticket_lb.conf"
 RABBITMQ_URL="${RABBITMQ_URL:-amqp://guest:guest@127.0.0.1:5672/%2F}"
@@ -75,32 +77,32 @@ append_result() {
     echo "${architecture},${workers},${run_id},${model},${workload},${operations},${elapsed},${throughput},${success},${seat_taken},${duplicate},${error}" >> "${OUT_FILE}"
 }
 
-python3 scripts/generate_hotspot_numbered.py --input "${BASE_NUMBERED_BENCH}" --output "${HOTSPOT_BENCH}" --hot-ratio 0.8 --hot-seat-ratio 0.05 --seed 42
+python3 "${PROJECT_ROOT}/scripts/generate_hotspot_numbered.py" --input "${BASE_NUMBERED_BENCH}" --output "${HOTSPOT_BENCH}" --hot-ratio 0.8 --hot-seat-ratio 0.05 --seed 42
 
 for workers in 1 2 4; do
     for run_id in $(seq 1 "${REPEATS}"); do
         echo "[Direct] workers=${workers} run=${run_id}"
-        bash scripts/stop_direct_workers.sh || true
-        bash scripts/start_direct_workers.sh "${workers}"
+        bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+        bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${workers}"
         write_nginx_conf "${workers}"
         sleep 2
 
         curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
-        direct_output=$(python3 scripts/benchmark_numbered_rest.py --file "${HOTSPOT_BENCH}" --base-url "${BASE_URL}" --concurrency "${REST_CONCURRENCY}")
+        direct_output=$(python3 "${PROJECT_ROOT}/scripts/benchmark_numbered_rest.py" --file "${HOTSPOT_BENCH}" --base-url "${BASE_URL}" --concurrency "${REST_CONCURRENCY}")
         append_result "direct" "${workers}" "${run_id}" "numbered" "hotspot_80_5" "${direct_output}"
 
         echo "[Indirect] workers=${workers} run=${run_id}"
-        bash scripts/stop_rabbitmq_workers.sh || true
-        bash scripts/start_rabbitmq_workers.sh "${workers}"
+        bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+        bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${workers}"
         sleep 2
 
-        bash scripts/reset_ticket_state.sh
-        indirect_output=$(python3 scripts/benchmark_rabbitmq.py --model numbered --file "${HOTSPOT_BENCH}" --rabbitmq-url "${RABBITMQ_URL}" --request-queue "${REQUEST_QUEUE}" --inflight "${INFLIGHT}")
+        bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
+        indirect_output=$(python3 "${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py" --model numbered --file "${HOTSPOT_BENCH}" --rabbitmq-url "${RABBITMQ_URL}" --request-queue "${REQUEST_QUEUE}" --inflight "${INFLIGHT}")
         append_result "indirect" "${workers}" "${run_id}" "numbered" "hotspot_80_5" "${indirect_output}"
     done
 done
 
-bash scripts/stop_direct_workers.sh || true
-bash scripts/stop_rabbitmq_workers.sh || true
+bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
 
 echo "Hotspot comparison results written to ${OUT_FILE}"

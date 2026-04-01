@@ -10,12 +10,14 @@ set -euo pipefail
 # Output:
 #   results/fault_injection_results.csv
 
-RESULTS_DIR="results"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}"/.. && pwd)"
+RESULTS_DIR="${PROJECT_ROOT}/results"
 OUT_FILE="${RESULTS_DIR}/fault_injection_results.csv"
 BASE_URL="http://127.0.0.1:8080"
-UNNUMBERED_BENCH="benchmarks/benchmark_unnumbered_20000.txt"
-NUMBERED_BENCH="benchmarks/benchmark_numbered_60000.txt"
-HOTSPOT_BENCH="benchmarks/benchmark_numbered_hotspot_80_5.txt"
+UNNUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt"
+NUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_60000.txt"
+HOTSPOT_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_hotspot_80_5.txt"
 RABBITMQ_URL="${RABBITMQ_URL:-amqp://guest:guest@127.0.0.1:5672/%2F}"
 REQUEST_QUEUE="${REQUEST_QUEUE:-tickets.buy}"
 REST_CONCURRENCY="${REST_CONCURRENCY:-128}"
@@ -101,29 +103,32 @@ read_benchmark_output_or_fail() {
     cat "${output_file}"
 }
 
-require_python_module "pika" "Install it with: pip install -r scripts/requirements_indirect.txt"
+require_python_module "pika" "Install it with: pip install -r ${PROJECT_ROOT}/scripts/requirements_indirect.txt"
 
 # -----------------------------
 # Scenario 1: Kill direct worker
 # -----------------------------
 
 echo "[Fault] Scenario 1: kill one direct worker"
-bash scripts/stop_direct_workers.sh || true
-bash scripts/start_direct_workers.sh 4
+bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" 4
 sleep 2
 
 curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
 
-if [[ ! -f scripts/.direct_workers_pids ]]; then
-    echo "Missing scripts/.direct_workers_pids"
+DIRECT_PIDS_FILE="${PROJECT_ROOT}/scripts/.direct_workers_pids"
+RABBITMQ_PIDS_FILE="${PROJECT_ROOT}/scripts/.rabbitmq_workers_pids"
+
+if [[ ! -f "${DIRECT_PIDS_FILE}" ]]; then
+    echo "Missing ${DIRECT_PIDS_FILE}"
     exit 1
 fi
 
 direct_output_file=$(mktemp)
-start_background_benchmark direct_bench_pid "${direct_output_file}" "python3 scripts/benchmark_numbered_rest.py --file ${HOTSPOT_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
+start_background_benchmark direct_bench_pid "${direct_output_file}" "python3 ${PROJECT_ROOT}/scripts/benchmark_numbered_rest.py --file ${HOTSPOT_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
 sleep 2
 
-victim_direct_pid=$(sed -n '1p' scripts/.direct_workers_pids)
+victim_direct_pid=$(sed -n '1p' "${DIRECT_PIDS_FILE}")
 if [[ -n "${victim_direct_pid}" ]] && kill -0 "${victim_direct_pid}" 2>/dev/null; then
     kill "${victim_direct_pid}" || true
     direct_note="killed_direct_worker_pid_${victim_direct_pid}"
@@ -143,22 +148,22 @@ append_row "kill_worker" "direct" "numbered_hotspot" "${direct_output}" "${direc
 # -----------------------------
 
 echo "[Fault] Scenario 2: kill one RabbitMQ worker"
-bash scripts/stop_rabbitmq_workers.sh || true
-bash scripts/start_rabbitmq_workers.sh 4
+bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" 4
 sleep 2
 
-bash scripts/reset_ticket_state.sh
+bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
 
-if [[ ! -f scripts/.rabbitmq_workers_pids ]]; then
-    echo "Missing scripts/.rabbitmq_workers_pids"
+if [[ ! -f "${RABBITMQ_PIDS_FILE}" ]]; then
+    echo "Missing ${RABBITMQ_PIDS_FILE}"
     exit 1
 fi
 
 rabbit_output_file=$(mktemp)
-start_background_benchmark rabbit_bench_pid "${rabbit_output_file}" "python3 scripts/benchmark_rabbitmq.py --model numbered --file ${HOTSPOT_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+start_background_benchmark rabbit_bench_pid "${rabbit_output_file}" "python3 ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${HOTSPOT_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 sleep 2
 
-victim_rabbit_pid=$(sed -n '1p' scripts/.rabbitmq_workers_pids)
+victim_rabbit_pid=$(sed -n '1p' "${RABBITMQ_PIDS_FILE}")
 if [[ -n "${victim_rabbit_pid}" ]] && kill -0 "${victim_rabbit_pid}" 2>/dev/null; then
     kill "${victim_rabbit_pid}" || true
     rabbit_note="killed_rabbit_worker_pid_${victim_rabbit_pid}"
@@ -178,14 +183,14 @@ append_row "kill_worker" "indirect" "numbered_hotspot" "${rabbit_output}" "${rab
 # -----------------------------
 
 echo "[Fault] Scenario 3: restart Redis during load"
-bash scripts/stop_direct_workers.sh || true
-bash scripts/start_direct_workers.sh 4
+bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" 4
 sleep 2
 
 curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
 
 redis_output_file=$(mktemp)
-start_background_benchmark redis_bench_pid "${redis_output_file}" "python3 scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
+start_background_benchmark redis_bench_pid "${redis_output_file}" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
 sleep 2
 
 set +e
@@ -200,7 +205,7 @@ redis_success=$(echo "${redis_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
 redis_correctness=$(check_correctness_note "unnumbered" "${redis_success}" "after_redis_restart")
 append_row "restart_redis" "direct" "unnumbered" "${redis_output}" "redis_restart_cmd_exit_${redis_cmd_exit}_${redis_correctness}"
 
-bash scripts/stop_direct_workers.sh || true
-bash scripts/stop_rabbitmq_workers.sh || true
+bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
 
 echo "Fault injection results written to ${OUT_FILE}"

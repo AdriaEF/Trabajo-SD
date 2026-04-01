@@ -7,10 +7,12 @@ set -euo pipefail
 # - Redis running
 # - Python dependencies installed for benchmark + worker
 
-RESULTS_DIR="results"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}"/.. && pwd)"
+RESULTS_DIR="${PROJECT_ROOT}/results"
 OUT_FILE="${RESULTS_DIR}/indirect_scaling_results.csv"
-UNNUMBERED_BENCH="benchmarks/benchmark_unnumbered_20000.txt"
-NUMBERED_BENCH="benchmarks/benchmark_numbered_60000.txt"
+UNNUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt"
+NUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_60000.txt"
 RABBITMQ_URL="${RABBITMQ_URL:-amqp://guest:guest@127.0.0.1:5672/%2F}"
 REQUEST_QUEUE="${REQUEST_QUEUE:-tickets.buy}"
 INFLIGHT="${INFLIGHT:-256}"
@@ -43,17 +45,17 @@ run_and_append() {
 
 for workers in 1 2 4; do
     echo "Running RabbitMQ with ${workers} workers"
-    bash scripts/stop_rabbitmq_workers.sh || true
-    bash scripts/start_rabbitmq_workers.sh "${workers}"
+    bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${workers}"
     sleep 2
 
-    bash scripts/reset_ticket_state.sh
-    run_and_append "${workers}" "unnumbered" "python3 scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
+    run_and_append "${workers}" "unnumbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 
-    bash scripts/reset_ticket_state.sh
-    run_and_append "${workers}" "numbered" "python3 scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
+    run_and_append "${workers}" "numbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 done
 
-bash scripts/stop_rabbitmq_workers.sh || true
+bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
 
 echo "Results written to ${OUT_FILE}"
