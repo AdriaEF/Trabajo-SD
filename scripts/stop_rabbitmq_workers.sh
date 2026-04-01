@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PID_FILE="scripts/.rabbitmq_workers_pids"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PID_FILE="${SCRIPT_DIR}/.rabbitmq_workers_pids"
 
 if [[ ! -f "${PID_FILE}" ]]; then
     echo "No PID file found: ${PID_FILE}"

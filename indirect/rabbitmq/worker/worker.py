@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+import time
 from typing import Any
 
 import pika
@@ -112,12 +114,34 @@ def main() -> None:
     channel.queue_declare(queue=REQUEST_QUEUE, durable=True)
     channel.basic_qos(prefetch_count=50)
 
+    message_count = [0]  # Use list to allow modification in nested function
+    last_log_time = [time.time()]
+    status_counter = {"SUCCESS": 0, "SOLD_OUT": 0, "DUPLICATE": 0, "SEAT_TAKEN": 0, "ERROR": 0}
+
     def on_request(ch: Any, method: Any, properties: Any, body: bytes) -> None:
         try:
             payload = json.loads(body.decode("utf-8"))
             response = process_message(payload)
+            status_counter[response.get("status", "ERROR")] = status_counter.get(response.get("status", "ERROR"), 0) + 1
         except Exception as exc:
             response = {"status": "ERROR", "error": str(exc)}
+            status_counter["ERROR"] += 1
+
+        message_count[0] += 1
+
+        # Log every 2000 messages or every 5 seconds
+        current_time = time.time()
+        if message_count[0] % 2000 == 0 or (current_time - last_log_time[0]) > 5:
+            elapsed = current_time - last_log_time[0]
+            rate = message_count[0] / elapsed if elapsed > 0 else 0
+            print(
+                f"[Progress] Processed {message_count[0]} messages "
+                f"(SUCCESS:{status_counter['SUCCESS']} DUPLICATE:{status_counter['DUPLICATE']} "
+                f"SEAT_TAKEN:{status_counter['SEAT_TAKEN']} SOLD_OUT:{status_counter['SOLD_OUT']} "
+                f"ERROR:{status_counter['ERROR']}) - Rate: {rate:.1f} msg/s",
+                flush=True
+            )
+            last_log_time[0] = current_time
 
         if properties.reply_to:
             ch.basic_publish(
@@ -130,7 +154,7 @@ def main() -> None:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(queue=REQUEST_QUEUE, on_message_callback=on_request)
-    print(f" [*] Worker waiting on queue '{REQUEST_QUEUE}'")
+    print(f" [*] Worker waiting on queue '{REQUEST_QUEUE}'", flush=True)
     channel.start_consuming()
 
 
