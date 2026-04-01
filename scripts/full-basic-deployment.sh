@@ -37,7 +37,7 @@ echo "===================  SMOKE TEST ARQUITECTURA DIRECTA (REST)  =============
 echo "================================================================================"
 echo ""
 
-bash "${SCRIPT_DIR}/stop_direct_workers.sh" || true
+sudo bash "${SCRIPT_DIR}/stop_direct_workers.sh" || true
 bash "${SCRIPT_DIR}/start_direct_workers.sh" 4
 bash "${SCRIPT_DIR}/run_direct_healthcheck.sh" 127.0.0.1 8001
 curl -s http://127.0.0.1:8001/debug/worker
@@ -75,7 +75,7 @@ echo "================= SMOKE TEST ARQUITECTURA INDIRECTA (RABBITMQ) ===========
 echo "================================================================================"
 echo ""
 
-bash "${SCRIPT_DIR}/stop_rabbitmq_workers.sh" || true
+sudo bash "${SCRIPT_DIR}/stop_rabbitmq_workers.sh" || true
 bash "${SCRIPT_DIR}/start_rabbitmq_workers.sh" 4
 bash "${SCRIPT_DIR}/reset_ticket_state.sh"
 python3 "${SCRIPT_DIR}/benchmark_rabbitmq.py" --model unnumbered --file "${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt" --rabbitmq-url amqp://guest:guest@127.0.0.1:5672/%2F --request-queue tickets.buy --inflight 256

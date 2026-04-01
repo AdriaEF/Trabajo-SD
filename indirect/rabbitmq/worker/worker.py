@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import threading
 import time
 from typing import Any
 
@@ -107,6 +108,9 @@ def process_message(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
+    worker_name = os.getenv("WORKER_ID", f"rabbit-worker-{os.getpid()}")
+    heartbeat_seconds = float(os.getenv("WORKER_HEARTBEAT_SECONDS", "10"))
+
     params = pika.URLParameters(RABBITMQ_URL)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
@@ -116,32 +120,74 @@ def main() -> None:
 
     message_count = [0]  # Use list to allow modification in nested function
     last_log_time = [time.time()]
+    last_progress_count = [0]
+    last_heartbeat_count = [0]
     status_counter = {"SUCCESS": 0, "SOLD_OUT": 0, "DUPLICATE": 0, "SEAT_TAKEN": 0, "ERROR": 0}
+    stats_lock = threading.Lock()
+
+    def log_heartbeat() -> None:
+        while True:
+            time.sleep(heartbeat_seconds)
+            with stats_lock:
+                total = message_count[0]
+                delta = total - last_heartbeat_count[0]
+                last_heartbeat_count[0] = total
+                success = status_counter["SUCCESS"]
+                duplicate = status_counter["DUPLICATE"]
+                seat_taken = status_counter["SEAT_TAKEN"]
+                sold_out = status_counter["SOLD_OUT"]
+                error = status_counter["ERROR"]
+
+            if delta == 0:
+                print(
+                    f"[Heartbeat] worker={worker_name} queue={REQUEST_QUEUE} idle=true total={total}",
+                    flush=True,
+                )
+            else:
+                rate = delta / heartbeat_seconds if heartbeat_seconds > 0 else 0.0
+                print(
+                    f"[Heartbeat] worker={worker_name} queue={REQUEST_QUEUE} idle=false "
+                    f"delta={delta} rate={rate:.1f}msg/s total={total} "
+                    f"(SUCCESS:{success} DUPLICATE:{duplicate} SEAT_TAKEN:{seat_taken} SOLD_OUT:{sold_out} ERROR:{error})",
+                    flush=True,
+                )
 
     def on_request(ch: Any, method: Any, properties: Any, body: bytes) -> None:
         try:
             payload = json.loads(body.decode("utf-8"))
             response = process_message(payload)
-            status_counter[response.get("status", "ERROR")] = status_counter.get(response.get("status", "ERROR"), 0) + 1
+            with stats_lock:
+                status = response.get("status", "ERROR")
+                status_counter[status] = status_counter.get(status, 0) + 1
         except Exception as exc:
             response = {"status": "ERROR", "error": str(exc)}
-            status_counter["ERROR"] += 1
+            with stats_lock:
+                status_counter["ERROR"] += 1
 
-        message_count[0] += 1
+        with stats_lock:
+            message_count[0] += 1
+            current_total = message_count[0]
+            success = status_counter["SUCCESS"]
+            duplicate = status_counter["DUPLICATE"]
+            seat_taken = status_counter["SEAT_TAKEN"]
+            sold_out = status_counter["SOLD_OUT"]
+            error = status_counter["ERROR"]
 
         # Log every 2000 messages or every 5 seconds
         current_time = time.time()
-        if message_count[0] % 2000 == 0 or (current_time - last_log_time[0]) > 5:
+        if current_total % 2000 == 0 or (current_time - last_log_time[0]) > 5:
             elapsed = current_time - last_log_time[0]
-            rate = message_count[0] / elapsed if elapsed > 0 else 0
+            delta = current_total - last_progress_count[0]
+            rate = delta / elapsed if elapsed > 0 else 0
             print(
-                f"[Progress] Processed {message_count[0]} messages "
-                f"(SUCCESS:{status_counter['SUCCESS']} DUPLICATE:{status_counter['DUPLICATE']} "
-                f"SEAT_TAKEN:{status_counter['SEAT_TAKEN']} SOLD_OUT:{status_counter['SOLD_OUT']} "
-                f"ERROR:{status_counter['ERROR']}) - Rate: {rate:.1f} msg/s",
+                f"[Progress] worker={worker_name} processed={current_total} "
+                f"(SUCCESS:{success} DUPLICATE:{duplicate} "
+                f"SEAT_TAKEN:{seat_taken} SOLD_OUT:{sold_out} "
+                f"ERROR:{error}) - Rate: {rate:.1f} msg/s",
                 flush=True
             )
             last_log_time[0] = current_time
+            last_progress_count[0] = current_total
 
         if properties.reply_to:
             ch.basic_publish(
@@ -154,7 +200,10 @@ def main() -> None:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(queue=REQUEST_QUEUE, on_message_callback=on_request)
-    print(f" [*] Worker waiting on queue '{REQUEST_QUEUE}'", flush=True)
+    heartbeat_thread = threading.Thread(target=log_heartbeat, daemon=True)
+    heartbeat_thread.start()
+
+    print(f" [*] Worker {worker_name} waiting on queue '{REQUEST_QUEUE}'", flush=True)
     channel.start_consuming()
 
 
