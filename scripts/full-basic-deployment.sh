@@ -60,7 +60,7 @@ sudo cp ticket_lb.conf /etc/nginx/conf.d/ticket_lb.conf
 sudo nginx -t
 sudo systemctl reload nginx
 curl -s http://127.0.0.1:8080/health
-bash run_part4_scaling_experiment.sh
+bash ../run_part4_scaling_experiment.sh
 
 # Resultado esperado: Se genera results/direct_scaling_results.csv.
 
@@ -83,7 +83,7 @@ echo "====================== TEST COMPLETO INDIRECTO (PARTE 5) =================
 echo "================================================================================"
 echo ""
 
-bash run_part5_scaling_experiment.sh
+bash ../run_part5_scaling_experiment.sh
 
 # Resultado esperado: Se genera results/indirect_scaling_results.csv.
 
@@ -95,11 +95,11 @@ echo ""
 
 # Hotspot
 
-bash run_part6_hotspot_experiment.sh
+bash ../run_part6_hotspot_experiment.sh
 
 # Fallos
 
-bash run_part7_fault_injection.sh
+bash ../run_part7_fault_injection.sh
 
 echo ""
 echo "================================================================================"
