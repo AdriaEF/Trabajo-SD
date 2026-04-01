@@ -1,0 +1,11 @@
+# Python cache
+__pycache__/
+
+# Generated benchmark artifacts
+benchmarks/benchmark_numbered_hotspot_80_5.txt
+
+# Generated experiment outputs
+results/
+
+# Worker logs
+scripts/*.log
