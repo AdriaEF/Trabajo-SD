@@ -59,6 +59,8 @@ echo "================ TEST COMPLETO DIRECTO CON BALANCEADOR (PARTE 4) =========
 echo "================================================================================"
 echo ""
 
+# Si ya se tiene nginx instalado:
+
 sudo cp "${PROJECT_ROOT}/direct/rest/nginx/ticket_lb.conf" /etc/nginx/conf.d/ticket_lb.conf
 sudo nginx -t
 sudo systemctl reload nginx
