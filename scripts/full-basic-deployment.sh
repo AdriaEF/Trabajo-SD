@@ -44,7 +44,7 @@ echo "==========================================================================
 echo ""
 
 curl -s -X POST http://127.0.0.1:8001/admin/reset/unnumbered >/dev/null
-python3 ../benchmarks/benchmark_unnumbered_rest.py --file ../benchmarks/benchmark_unnumbered_20000.txt --base-url http://127.0.0.1:8001 --concurrency 64
+python3 benchmark_unnumbered_rest.py --file ../benchmarks/benchmark_unnumbered_20000.txt --base-url http://127.0.0.1:8001 --concurrency 64
 
 # Señal de que está bien: SUCCESS cerca de 20000, sin errores inesperados.
 
@@ -73,7 +73,7 @@ echo ""
 bash stop_rabbitmq_workers.sh || true
 bash start_rabbitmq_workers.sh 4
 bash reset_ticket_state.sh
-python3 ../benchmarks/benchmark_rabbitmq.py --model unnumbered --file ../benchmarks/benchmark_unnumbered_20000.txt --rabbitmq-url amqp://guest:guest@127.0.0.1:5672/%2F --request-queue tickets.buy --inflight 256
+python3 benchmark_rabbitmq.py --model unnumbered --file ../benchmarks/benchmark_unnumbered_20000.txt --rabbitmq-url amqp://guest:guest@127.0.0.1:5672/%2F --request-queue tickets.buy --inflight 256
 
 # Resultado esperado: SUCCESS cerca de 20000.
 
