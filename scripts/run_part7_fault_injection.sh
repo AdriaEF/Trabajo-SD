@@ -50,6 +50,16 @@ append_row() {
     echo "${scenario},${architecture},${model},${operations},${elapsed},${throughput},${success},${sold_out},${seat_taken},${duplicate},${error},${notes}" >> "${OUT_FILE}"
 }
 
+require_python_module() {
+    local module_name="$1"
+    local install_hint="$2"
+
+    if ! python3 -c "import ${module_name}" >/dev/null 2>&1; then
+        echo "Missing Python module '${module_name}'. ${install_hint}" >&2
+        exit 1
+    fi
+}
+
 check_correctness_note() {
     local model="$1"
     local success="$2"
@@ -72,11 +82,26 @@ check_correctness_note() {
     echo "correctness_not_checked_${extra}"
 }
 
-start_background_and_capture_pid() {
-    local cmd="$1"
-    bash -lc "${cmd}" &
-    echo $!
+start_background_benchmark() {
+    local pid_var_name="$1"
+    local output_file="$2"
+    local cmd="$3"
+
+    bash -lc "${cmd}" >"${output_file}" 2>&1 &
+    local pid="$!"
+    printf -v "${pid_var_name}" '%s' "${pid}"
 }
+
+read_benchmark_output_or_fail() {
+    local output_file="$1"
+    if [[ ! -s "${output_file}" ]]; then
+        echo "Benchmark output file is empty: ${output_file}" >&2
+        exit 1
+    fi
+    cat "${output_file}"
+}
+
+require_python_module "pika" "Install it with: pip install -r scripts/requirements_indirect.txt"
 
 # -----------------------------
 # Scenario 1: Kill direct worker
@@ -87,12 +112,15 @@ bash scripts/stop_direct_workers.sh || true
 bash scripts/start_direct_workers.sh 4
 sleep 2
 
+curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
+
 if [[ ! -f scripts/.direct_workers_pids ]]; then
     echo "Missing scripts/.direct_workers_pids"
     exit 1
 fi
 
-direct_bench_pid=$(start_background_and_capture_pid "python3 scripts/benchmark_numbered_rest.py --file ${HOTSPOT_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}")
+direct_output_file=$(mktemp)
+start_background_benchmark direct_bench_pid "${direct_output_file}" "python3 scripts/benchmark_numbered_rest.py --file ${HOTSPOT_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
 sleep 2
 
 victim_direct_pid=$(sed -n '1p' scripts/.direct_workers_pids)
@@ -104,7 +132,8 @@ else
 fi
 
 wait "${direct_bench_pid}" || true
-direct_output=$(python3 scripts/benchmark_numbered_rest.py --file "${HOTSPOT_BENCH}" --base-url "${BASE_URL}" --concurrency "${REST_CONCURRENCY}")
+direct_output=$(read_benchmark_output_or_fail "${direct_output_file}")
+rm -f "${direct_output_file}"
 direct_success=$(echo "${direct_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
 direct_correctness=$(check_correctness_note "numbered_hotspot" "${direct_success}" "after_kill")
 append_row "kill_worker" "direct" "numbered_hotspot" "${direct_output}" "${direct_note}_${direct_correctness}"
@@ -118,12 +147,15 @@ bash scripts/stop_rabbitmq_workers.sh || true
 bash scripts/start_rabbitmq_workers.sh 4
 sleep 2
 
+bash scripts/reset_ticket_state.sh
+
 if [[ ! -f scripts/.rabbitmq_workers_pids ]]; then
     echo "Missing scripts/.rabbitmq_workers_pids"
     exit 1
 fi
 
-rabbit_bench_pid=$(start_background_and_capture_pid "python3 scripts/benchmark_rabbitmq.py --model numbered --file ${HOTSPOT_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}")
+rabbit_output_file=$(mktemp)
+start_background_benchmark rabbit_bench_pid "${rabbit_output_file}" "python3 scripts/benchmark_rabbitmq.py --model numbered --file ${HOTSPOT_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 sleep 2
 
 victim_rabbit_pid=$(sed -n '1p' scripts/.rabbitmq_workers_pids)
@@ -135,7 +167,8 @@ else
 fi
 
 wait "${rabbit_bench_pid}" || true
-rabbit_output=$(python3 scripts/benchmark_rabbitmq.py --model numbered --file "${HOTSPOT_BENCH}" --rabbitmq-url "${RABBITMQ_URL}" --request-queue "${REQUEST_QUEUE}" --inflight "${INFLIGHT}")
+rabbit_output=$(read_benchmark_output_or_fail "${rabbit_output_file}")
+rm -f "${rabbit_output_file}"
 rabbit_success=$(echo "${rabbit_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
 rabbit_correctness=$(check_correctness_note "numbered_hotspot" "${rabbit_success}" "after_kill")
 append_row "kill_worker" "indirect" "numbered_hotspot" "${rabbit_output}" "${rabbit_note}_${rabbit_correctness}"
@@ -149,7 +182,10 @@ bash scripts/stop_direct_workers.sh || true
 bash scripts/start_direct_workers.sh 4
 sleep 2
 
-redis_bench_pid=$(start_background_and_capture_pid "python3 scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}")
+curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
+
+redis_output_file=$(mktemp)
+start_background_benchmark redis_bench_pid "${redis_output_file}" "python3 scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
 sleep 2
 
 set +e
@@ -158,7 +194,8 @@ redis_cmd_exit=$?
 set -e
 
 wait "${redis_bench_pid}" || true
-redis_output=$(python3 scripts/benchmark_unnumbered_rest.py --file "${UNNUMBERED_BENCH}" --base-url "${BASE_URL}" --concurrency "${REST_CONCURRENCY}")
+redis_output=$(read_benchmark_output_or_fail "${redis_output_file}")
+rm -f "${redis_output_file}"
 redis_success=$(echo "${redis_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
 redis_correctness=$(check_correctness_note "unnumbered" "${redis_success}" "after_redis_restart")
 append_row "restart_redis" "direct" "unnumbered" "${redis_output}" "redis_restart_cmd_exit_${redis_cmd_exit}_${redis_correctness}"

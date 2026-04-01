@@ -15,7 +15,7 @@ PID_FILE="${SCRIPT_DIR}/.rabbitmq_workers_pids"
 for i in $(seq 1 "${WORKERS}"); do
     (
         cd "${WORKER_DIR}"
-        python3 worker.py > "${SCRIPT_DIR}/rabbitmq_worker_${i}.log" 2>&1 &
+        PYTHONUNBUFFERED=1 python3 -u worker.py > "${SCRIPT_DIR}/rabbitmq_worker_${i}.log" 2>&1 &
         echo "$!" >> "${PID_FILE}"
     )
     echo "Started rabbitmq-worker-${i}"

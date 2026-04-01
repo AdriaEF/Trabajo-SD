@@ -130,7 +130,7 @@ def main() -> None:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(queue=REQUEST_QUEUE, on_message_callback=on_request)
-    print(f" [*] Worker waiting on queue '{REQUEST_QUEUE}'")
+    print(f" [*] Worker waiting on queue '{REQUEST_QUEUE}'", flush=True)
     channel.start_consuming()
 
 
