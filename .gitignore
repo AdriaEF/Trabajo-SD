@@ -9,4 +9,4 @@ results/
 
 # Worker logs & PIDs
 scripts/*.log
-scripts/*_pid
+scripts/*_pids
