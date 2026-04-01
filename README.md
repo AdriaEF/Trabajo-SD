@@ -1,59 +1,97 @@
 # Scalable Concert Ticket Acquisition System
 
-Proyecto por fases para comparar dos arquitecturas de compra de entradas bajo alta concurrencia:
+Proyecto por fases para disenar, implementar y evaluar un sistema de venta de entradas bajo alta concurrencia.
 
-- Arquitectura directa: REST + balanceo
-- Arquitectura indirecta: RabbitMQ + workers
+Se comparan dos arquitecturas:
 
-Este repositorio esta organizado para entregar:
+- Directa: cliente -> REST workers (con y sin balanceo)
+- Indirecta: cliente -> RabbitMQ -> workers
 
-- Codigo fuente
-- Instrucciones de despliegue en VMs
-- Resultados de benchmark y graficas
-- Reporte tecnico
+## Objetivo
 
-## Estado actual
+Validar correccion y escalabilidad para 20.000 entradas en dos modelos:
 
-- Parte 1 en progreso: diseno base y entorno
-- Healthcheck inicial disponible para arquitectura directa
-- Parte 2 y 3 base implementadas (unnumbered y numbered en REST)
-- Parte 4 preparada (balanceo con NGINX + experimento de escalado)
-- Parte 5 inicial implementada (RabbitMQ worker + benchmark RPC)
+- Unnumbered: maximo 20.000 compras exitosas
+- Numbered: cada asiento se vende como maximo una vez
 
-## Flujo de trabajo acordado
+## Estado del proyecto
 
-- Desarrollo en Windows (este equipo)
-- Validacion final en Linux VM (AWS Academy/laboratorio)
+Implementacion y documentacion completas por fases:
 
-Importante: el enunciado exige evaluar en VMs. El trabajo local en Windows se usa para avanzar implementacion y depuracion.
+- Parte 1: arquitectura base y entorno
+- Parte 2: unnumbered por REST
+- Parte 3: numbered por REST
+- Parte 4: balanceo en arquitectura directa
+- Parte 5: arquitectura indirecta con RabbitMQ
+- Parte 6: experimento hotspot 80/5
+- Parte 7: inyeccion de fallos
+- Parte 8: cierre, resultados y soporte para reporte final
 
-## Estructura
+## Estructura del repositorio
 
-- `docs/`: explicaciones tecnicas para cada fase
-- `direct/`: implementacion de comunicacion directa
-- `indirect/`: implementacion de comunicacion indirecta
-- `benchmarks/`: archivos de carga (sin modificar)
-- `scripts/`: automatizacion de despliegue y ejecucion
-- `results/`: salidas de experimentos
+- `docs/`: guias tecnicas por fase y procedimientos de ejecucion
+- `direct/`: servicio REST y configuracion de NGINX para balanceo
+- `indirect/`: workers RabbitMQ
+- `benchmarks/`: archivos de carga para pruebas
+- `scripts/`: automatizacion de benchmarks, escalado, fallos y graficas
+- `PLAN_TRABAJO.md`: plan general por partes
 
-## Scripts clave
+## Requisitos
 
-- `scripts/start_direct_workers.sh`: arranca workers REST en puertos 8001..N
-- `scripts/stop_direct_workers.sh`: detiene workers REST arrancados por script
-- `scripts/run_part4_scaling_experiment.sh`: corre experimento 1/2/4 workers y genera CSV
-- `scripts/benchmark_rabbitmq.py`: benchmark para arquitectura indirecta (RabbitMQ)
-- `scripts/run_part5_scaling_experiment.sh`: corre experimento indirecto 1/2/4 workers y genera CSV
-- `docs/10_plantilla_resultados.md`: plantilla para consolidar resultados y redactar analisis
-- `scripts/generate_hotspot_numbered.py`: genera benchmark numbered con contencion 80/5
-- `scripts/run_part6_hotspot_experiment.sh`: compara directa vs indirecta bajo hotspot y genera CSV
-- `scripts/run_part7_fault_injection.sh`: inyecta fallos controlados y genera CSV de resiliencia
-- `scripts/build_plots.py`: genera graficas PNG para la memoria final
-- `scripts/requirements_report.txt`: dependencias para generacion de graficas
+- Python 3.10+
+- Linux VM para validacion final (recomendado por el enunciado)
+- Para Parte 5 en adelante: RabbitMQ disponible
 
-Dependencia adicional para benchmark RabbitMQ:
+Dependencias Python principales:
 
-- `pip install -r scripts/requirements_indirect.txt`
+- Arquitectura directa (REST): `direct/rest/service/requirements.txt`
+- Arquitectura indirecta: `scripts/requirements_indirect.txt`
+- Reporte y graficas: `scripts/requirements_report.txt`
 
-## Proximo paso
+## Inicio rapido
 
-Implementar modelo unnumbered en REST con garantia de no overselling.
+1. Instalar dependencias del servicio REST.
+2. Levantar workers REST.
+3. Ejecutar benchmark unnumbered y/o numbered.
+
+Ejemplo:
+
+```bash
+pip install -r direct/rest/service/requirements.txt
+bash scripts/start_direct_workers.sh 4
+python scripts/benchmark_unnumbered_rest.py --help
+python scripts/benchmark_numbered_rest.py --help
+```
+
+Para RabbitMQ:
+
+```bash
+pip install -r scripts/requirements_indirect.txt
+python scripts/benchmark_rabbitmq.py --help
+```
+
+## Scripts principales
+
+- `scripts/start_direct_workers.sh`: arranque de workers REST (puertos 8001..N)
+- `scripts/stop_direct_workers.sh`: parada de workers REST
+- `scripts/run_part4_scaling_experiment.sh`: experimento directa 1/2/4 workers
+- `scripts/run_part5_scaling_experiment.sh`: experimento indirecta 1/2/4 workers
+- `scripts/generate_hotspot_numbered.py`: generador de carga hotspot 80/5
+- `scripts/run_part6_hotspot_experiment.sh`: comparativa directa vs indirecta en hotspot
+- `scripts/run_part7_fault_injection.sh`: escenarios de fallo controlado
+- `scripts/build_plots.py`: generacion de graficas finales
+
+## Documentacion recomendada
+
+- `docs/05_como_ejecutar_parte2.md`
+- `docs/08_parte4_balanceo_directo.md`
+- `docs/09_parte5_rabbitmq.md`
+- `docs/11_parte6_hotspot_80_5.md`
+- `docs/12_parte7_fallos.md`
+- `docs/13_parte8_cierre_entrega.md`
+
+## Notas de trabajo
+
+- Desarrollo diario en Windows.
+- Validacion y evidencia final en Linux VM.
+- Los resultados (CSV/PNG) se generan al ejecutar los scripts de experimento.
