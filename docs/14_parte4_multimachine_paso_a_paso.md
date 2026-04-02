@@ -17,8 +17,7 @@ Si tiene la IP duplicada entre VM1 y VM2 en la red interna.
 3. Arranca VM2 y renueva DHCP:
 
 ```bash
-sudo dhclient -r enp0s8
-sudo dhclient enp0s8
+nmcli device reapply enp0s8
 ```
 
 4. Verifica IPs con `ip a`:
