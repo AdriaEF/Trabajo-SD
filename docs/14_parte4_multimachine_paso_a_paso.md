@@ -8,9 +8,9 @@ Este documento describe como ejecutar la Parte 4 (arquitectura directa con NGINX
 - VM2: worker remoto
 - Resultado esperado: `results/direct_scaling_results.csv` generado en VM1
 
-## 1) Arreglar red (obligatorio)
+## 1) Arreglar red para pruebas mutlimáquina
 
-Ahora mismo tienes IP duplicada entre VM1 y VM2 en la red interna, eso rompe la prueba distribuida.
+Si tiene la IP duplicada entre VM1 y VM2 en la red interna.
 
 1. Apaga VM1 y VM2.
 2. En VirtualBox, en VM2, genera nueva MAC en cada adaptador de red.
@@ -32,13 +32,13 @@ Deben ser distintas.
 Desde VM1:
 
 ```bash
-ping -c 3 192.168.1.11
+ping -c 3 192.168.1.10
 ```
 
 Desde VM2:
 
 ```bash
-ping -c 3 192.168.1.10
+ping -c 3 192.168.1.11
 ```
 
 ## 3) Preparar Redis en VM1 para acceso remoto
@@ -55,6 +55,8 @@ Ajuste recomendado para laboratorio:
 
 ```conf
 bind 0.0.0.0
+protected-mode no
+port 6379
 ```
 
 Reinicia Redis:
@@ -63,6 +65,11 @@ Reinicia Redis:
 sudo systemctl restart redis-server
 sudo systemctl status redis-server --no-pager
 ```
+Nota: En las dos vm, ejecutar venv y comporbar requerimientos antes de ejcutar comandos:
+
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r direct/rest/service/requirements.txt
 
 ## 4) Arrancar worker remoto en VM2
 
