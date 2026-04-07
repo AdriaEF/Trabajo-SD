@@ -16,13 +16,13 @@ for i in $(seq 1 "${WORKERS}"); do
     port=$((8000 + i))
     worker_id="direct-worker-${i}"
 
-    (
-        cd "${APP_DIR}"
-        WORKER_ID="${worker_id}" uvicorn app:app --host 0.0.0.0 --port "${port}" > "${SCRIPT_DIR}/worker_${i}.log" 2>&1 &
-        echo "$!" >> "${PID_FILE}"
-    )
-
-    echo "Started ${worker_id} on port ${port}"
+    cd "${APP_DIR}"
+    export WORKER_ID="${worker_id}"
+    uvicorn app:app --host 0.0.0.0 --port "${port}" > "${SCRIPT_DIR}/worker_${i}.log" 2>&1 &
+    pid=$!
+    echo "${pid}" >> "${PID_FILE}"
+    
+    echo "Started ${worker_id} on port ${port} (PID: ${pid})"
 done
 
 echo "PIDs saved in ${PID_FILE}"

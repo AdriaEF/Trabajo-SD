@@ -36,13 +36,14 @@ for i in $(seq 1 "${WORKERS}"); do
     worker_id="direct-worker-${i}"
     log_file="${SCRIPT_DIR}/worker_${i}.log"
 
-    (
-        cd "${APP_DIR}"
-        REDIS_URL="${REDIS_URL}" WORKER_ID="${worker_id}" uvicorn app:app --host 0.0.0.0 --port "${port}" > "${log_file}" 2>&1 &
-        echo "$!" >> "${PID_FILE}"
-    )
-
-    echo "Started ${worker_id} on port ${port}"
+    cd "${APP_DIR}"
+    export REDIS_URL="${REDIS_URL}"
+    export WORKER_ID="${worker_id}"
+    uvicorn app:app --host 0.0.0.0 --port "${port}" > "${log_file}" 2>&1 &
+    pid=$!
+    echo "${pid}" >> "${PID_FILE}"
+    
+    echo "Started ${worker_id} on port ${port} (PID: ${pid})"
 done
 
 echo "Workers using REDIS_URL=${REDIS_URL}"

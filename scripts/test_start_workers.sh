@@ -12,12 +12,12 @@ set -euo pipefail
 #   bash test_start_workers.sh 192.168.1.10 2
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: bash test_start_workers.sh <vm1_redis_ip> [workers]" >&2
+    echo "Usage: bash test_start_workers.sh <redis_ip> [workers]" >&2
     echo "Example: bash test_start_workers.sh 192.168.1.10 1" >&2
     exit 1
 fi
 
-VM1_REDIS_IP="$1"
+REDIS_IP="$1"
 WORKERS="${2:-1}"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_PATH="${PROJECT_ROOT}/.venv"
 REQ_FILE="${PROJECT_ROOT}/direct/rest/service/requirements.txt"
-REDIS_URL="redis://${VM1_REDIS_IP}:6379/0"
+REDIS_URL="redis://${REDIS_IP}:6379/0"
 PORT_BASE="${PORT_BASE:-8000}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_SLEEP_SECONDS="${HEALTH_SLEEP_SECONDS:-1}"
@@ -57,6 +57,7 @@ source "${VENV_PATH}/bin/activate"
 python3 -m pip install -r "${REQ_FILE}"
 
 echo "Precheck: Redis ${REDIS_URL}"
+export REDIS_URL="${REDIS_URL}"
 python3 - <<'PY'
 import os
 import sys
@@ -71,7 +72,8 @@ except Exception as exc:
 print(f"Redis ping OK: {redis_url}")
 PY
 
-REDIS_URL="${REDIS_URL}" WORKERS="${WORKERS}" bash "${SCRIPT_DIR}/start_direct_workers_multimachine.sh"
+export REDIS_URL="${REDIS_URL}" WORKERS="${WORKERS}"
+bash "${SCRIPT_DIR}/start_direct_workers_multimachine.sh"
 
 echo "Postcheck: local worker health"
 for i in $(seq 1 "${WORKERS}"); do
