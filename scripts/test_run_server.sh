@@ -26,6 +26,40 @@ SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_PATH="${PROJECT_ROOT}/.venv"
 REQ_FILE="${PROJECT_ROOT}/direct/rest/service/requirements.txt"
+HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
+HEALTH_SLEEP_SECONDS="${HEALTH_SLEEP_SECONDS:-1}"
+
+wait_for_health() {
+    local host_port="$1"
+    local retries="$2"
+    local sleep_seconds="$3"
+    local url="http://${host_port}/health"
+
+    for attempt in $(seq 1 "${retries}"); do
+        if curl --fail --silent --show-error "${url}" >/dev/null; then
+            echo "Health OK: ${url}"
+            return 0
+        fi
+        sleep "${sleep_seconds}"
+    done
+
+    echo "Health check failed: ${url}" >&2
+    return 1
+}
+
+check_service_status() {
+    local service_name="$1"
+    echo "Precheck: service status ${service_name}"
+    sudo systemctl status "${service_name}" --no-pager || true
+}
+
+ensure_nginx_running() {
+    if ! sudo systemctl is-active --quiet nginx; then
+        echo "NGINX is not active. Starting nginx..."
+        sudo systemctl start nginx
+    fi
+    sudo systemctl status nginx --no-pager || true
+}
 
 if [[ ! -d "${VENV_PATH}" ]]; then
     python3 -m venv "${VENV_PATH}"
@@ -34,6 +68,14 @@ fi
 # shellcheck disable=SC1091
 source "${VENV_PATH}/bin/activate"
 python3 -m pip install -r "${REQ_FILE}"
+
+check_service_status "redis-server"
+ensure_nginx_running
+
+echo "Precheck: remote workers"
+for server in ${REMOTE_SERVERS}; do
+    wait_for_health "${server}" "${HEALTH_RETRIES}" "${HEALTH_SLEEP_SECONDS}"
+done
 
 sudo env \
     LOCAL_UPSTREAM_HOST="${VM1_IP}" \
