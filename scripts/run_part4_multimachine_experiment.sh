@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage example:
 #   LOCAL_UPSTREAM_HOST="10.0.0.11" \
 #   DIRECT_UPSTREAM_SERVERS="10.0.0.12:8001" \
-#   LOCAL_WORKER_COUNT=1 \
+#   TOTAL_WORKERS=2 \
 #   bash scripts/run_part4_multimachine_experiment.sh
 #
 # Notes:
@@ -23,24 +23,38 @@ BASE_URL="http://127.0.0.1:8080"
 NGINX_CONF_PATH="/etc/nginx/conf.d/ticket_lb.conf"
 LOCAL_UPSTREAM_HOST="${LOCAL_UPSTREAM_HOST:-127.0.0.1}"
 DIRECT_UPSTREAM_SERVERS="${DIRECT_UPSTREAM_SERVERS:-}"
-LOCAL_WORKER_COUNT="${LOCAL_WORKER_COUNT:-}"
+TOTAL_WORKERS="${TOTAL_WORKERS:-}"
 
-if [[ -z "${LOCAL_WORKER_COUNT}" ]]; then
-    if [[ -n "${DIRECT_UPSTREAM_SERVERS}" ]]; then
-        LOCAL_WORKER_COUNT="1"
+REMOTE_WORKER_COUNT=0
+if [[ -n "${DIRECT_UPSTREAM_SERVERS}" ]]; then
+    # shellcheck disable=SC2086
+    set -- ${DIRECT_UPSTREAM_SERVERS}
+    REMOTE_WORKER_COUNT=$#
+fi
+
+if [[ -z "${TOTAL_WORKERS}" ]]; then
+    if [[ "${REMOTE_WORKER_COUNT}" -gt 0 ]]; then
+        TOTAL_WORKERS="$((REMOTE_WORKER_COUNT + 1))"
     else
-        LOCAL_WORKER_COUNT="4"
+        TOTAL_WORKERS="4"
     fi
+fi
+
+LOCAL_WORKER_COUNT="$((TOTAL_WORKERS - REMOTE_WORKER_COUNT))"
+
+if [[ "${LOCAL_WORKER_COUNT}" -lt 0 ]]; then
+    echo "TOTAL_WORKERS (${TOTAL_WORKERS}) cannot be smaller than remote workers (${REMOTE_WORKER_COUNT})" >&2
+    exit 1
+fi
+
+if [[ -n "${DIRECT_UPSTREAM_SERVERS}" && "${LOCAL_WORKER_COUNT}" -eq 0 ]]; then
+    echo "Warning: all workers are remote; VM1 will only run NGINX and benchmarks." >&2
 fi
 
 mkdir -p "${RESULTS_DIR}"
 
 if [[ -z "${DIRECT_UPSTREAM_SERVERS}" ]]; then
     echo "DIRECT_UPSTREAM_SERVERS is not set; defaulting to local 127.0.0.1 workers." >&2
-fi
-
-if [[ -z "${LOCAL_WORKER_COUNT}" ]]; then
-    LOCAL_WORKER_COUNT="4"
 fi
 
 printf 'architecture,workers,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error\n' > "${OUT_FILE}"
