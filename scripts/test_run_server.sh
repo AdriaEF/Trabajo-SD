@@ -17,7 +17,7 @@ if [[ $# -lt 2 ]]; then
     exit 1
 fi
 
-VM1_IP="$1"
+IP="$1"
 REMOTE_SERVERS="$2"
 TOTAL_WORKERS="${3:-4}"
 
@@ -78,7 +78,13 @@ for server in ${REMOTE_SERVERS}; do
 done
 
 sudo env \
-    LOCAL_UPSTREAM_HOST="${VM1_IP}" \
+    LOCAL_UPSTREAM_HOST="${IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
-    bash "${SCRIPT_DIR}/run_part4_multimachine_experiment.sh"
+    bash "${SCRIPT_DIR}/run_part4_multimachine_scaling_redis.sh"
+
+sudo env \
+    LOCAL_UPSTREAM_HOST="${IP}" \
+    DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
+    TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    bash "${SCRIPT_DIR}/run_part5_multimachine_scaling_rabbit.sh"
