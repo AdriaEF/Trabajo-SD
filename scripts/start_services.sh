@@ -50,6 +50,12 @@ else
     echo "port ${PORT}" >>"${conf}"
 fi
 
+if grep -qE '^\s*protected-mode\b' "${conf}"; then
+    sed -ri "s|^\s*protected-mode\b.*|protected-mode no|" "${conf}"
+else
+    echo "protected-mode no" >>"${conf}"
+fi
+
 # Restart Redis (try common unit names)
 if systemctl list-units --full -all | grep -qE '^redis(-server)?\.service'; then
     systemctl restart redis-server || systemctl restart redis || true
