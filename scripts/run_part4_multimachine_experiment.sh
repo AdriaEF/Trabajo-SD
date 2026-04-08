@@ -25,11 +25,12 @@ LOCAL_UPSTREAM_HOST="${LOCAL_UPSTREAM_HOST:-127.0.0.1}"
 DIRECT_UPSTREAM_SERVERS="${DIRECT_UPSTREAM_SERVERS:-}"
 TOTAL_WORKERS="${TOTAL_WORKERS:-}"
 
+REMOTE_SERVERS_ARRAY=()
 REMOTE_WORKER_COUNT=0
 if [[ -n "${DIRECT_UPSTREAM_SERVERS}" ]]; then
-    # shellcheck disable=SC2086
-    set -- ${DIRECT_UPSTREAM_SERVERS}
-    REMOTE_WORKER_COUNT=$#
+    # split DIRECT_UPSTREAM_SERVERS into array by whitespace (preserves host:port entries)
+    read -r -a REMOTE_SERVERS_ARRAY <<< "${DIRECT_UPSTREAM_SERVERS}"
+    REMOTE_WORKER_COUNT="${#REMOTE_SERVERS_ARRAY[@]}"
 fi
 
 if [[ -z "${TOTAL_WORKERS}" ]]; then
@@ -71,7 +72,7 @@ write_nginx_conf() {
                 port=$((8000 + i))
                 echo "    server ${LOCAL_UPSTREAM_HOST}:${port};"
             done
-            for server in ${DIRECT_UPSTREAM_SERVERS}; do
+            for server in ${REMOTE_SERVERS_ARRAY[@]}; do
                 echo "    server ${server};"
             done
         else
