@@ -140,6 +140,12 @@ main() {
 
     if [[ "$INSTALL_PYTHON_ENVS" == "1" ]]; then
         log "Preparing Python virtual environments"
+        # Shared project venv used by orchestration scripts (for example test_run_server.sh).
+        # Include report deps here so scripts/build_plots.py works out of the box.
+        install_python_requirements \
+            "$PROJECT_ROOT/scripts/requirements_report.txt" \
+            "$PROJECT_ROOT/.venv"
+
         install_python_requirements \
             "$PROJECT_ROOT/direct/rest/service/requirements.txt" \
             "$PROJECT_ROOT/direct/rest/service/.venv"

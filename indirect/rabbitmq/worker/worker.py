@@ -112,6 +112,13 @@ def main() -> None:
     heartbeat_seconds = float(os.getenv("WORKER_HEARTBEAT_SECONDS", "10"))
 
     params = pika.URLParameters(RABBITMQ_URL)
+    # Configure RabbitMQ heartbeat to prevent timeout on idle workers
+    # Set heartbeat to 600 seconds (10 minutes) to allow idle workers to persist
+    params.heartbeat = 600
+    params.blocked_connection_timeout = 300
+    params.connection_attempts = 3
+    params.retry_delay = 2
+   
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
 
@@ -204,7 +211,50 @@ def main() -> None:
     heartbeat_thread.start()
 
     print(f" [*] Worker {worker_name} waiting on queue '{REQUEST_QUEUE}'", flush=True)
-    channel.start_consuming()
+    try:
+        channel.start_consuming()
+    except (pika.exceptions.AMQPHeartbeatTimeout, pika.exceptions.ConnectionClosed) as e:
+        print(f"[ERROR] Connection lost: {e}. Attempting to reconnect...", flush=True)
+        if connection.is_open:
+            connection.close()
+        # Reconnect with exponential backoff
+        max_retries = 5
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                retry_count += 1
+                wait_time = min(2 ** retry_count, 60)  # Cap at 60 seconds
+                print(f"[INFO] Reconnecting (attempt {retry_count}/{max_retries}) in {wait_time}s...", flush=True)
+                time.sleep(wait_time)
+                main()  # Recursive call to restart
+                return
+            except Exception as retry_error:
+                print(f"[ERROR] Reconnection attempt {retry_count} failed: {retry_error}", flush=True)
+                if retry_count >= max_retries:
+                    print(f"[ERROR] Max retries exceeded. Exiting.", flush=True)
+                    raise
+    try:
+        channel.start_consuming()
+    except (pika.exceptions.AMQPHeartbeatTimeout, pika.exceptions.ConnectionClosed) as e:
+        print(f"[ERROR] Connection lost: {e}. Attempting to reconnect...", flush=True)
+        if connection.is_open:
+            connection.close()
+        # Reconnect with exponential backoff
+        max_retries = 5
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                retry_count += 1
+                wait_time = min(2 ** retry_count, 60)  # Cap at 60 seconds
+                print(f"[INFO] Reconnecting (attempt {retry_count}/{max_retries}) in {wait_time}s...", flush=True)
+                time.sleep(wait_time)
+                main()  # Recursive call to restart
+                return
+            except Exception as retry_error:
+                print(f"[ERROR] Reconnection attempt {retry_count} failed: {retry_error}", flush=True)
+                if retry_count >= max_retries:
+                    print(f"[ERROR] Max retries exceeded. Exiting.", flush=True)
+                    raise
 
 
 if __name__ == "__main__":

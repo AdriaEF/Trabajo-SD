@@ -2,11 +2,16 @@
 set -euo pipefail
 
 # Runs direct REST scaling experiment for multiple machines.
-# Usage example:
+# Usage examples:
+#   LOCAL_UPSTREAM_HOST="10.0.0.11" \
+#   DIRECT_UPSTREAM_SERVERS="10.0.0.12:8001 10.0.0.12:8002 10.0.0.12:8003 10.0.0.12:8004" \
+#   WORKERS_LIST="1 2 4" \
+#   bash scripts/run_part4_multimachine_scaling_redis.sh
+#
 #   LOCAL_UPSTREAM_HOST="10.0.0.11" \
 #   DIRECT_UPSTREAM_SERVERS="10.0.0.12:8001" \
 #   TOTAL_WORKERS=2 \
-#   bash scripts/run_part4_multimachine_experiment.sh
+#   bash scripts/run_part4_multimachine_scaling_redis.sh
 #
 # Notes:
 # - Run this script on the machine that hosts NGINX.
@@ -24,6 +29,7 @@ NGINX_CONF_PATH="/etc/nginx/conf.d/ticket_lb.conf"
 LOCAL_UPSTREAM_HOST="${LOCAL_UPSTREAM_HOST:-127.0.0.1}"
 DIRECT_UPSTREAM_SERVERS="${DIRECT_UPSTREAM_SERVERS:-}"
 TOTAL_WORKERS="${TOTAL_WORKERS:-}"
+WORKERS_LIST="${WORKERS_LIST:-}"
 
 REMOTE_SERVERS_ARRAY=()
 REMOTE_WORKER_COUNT=0
@@ -33,23 +39,12 @@ if [[ -n "${DIRECT_UPSTREAM_SERVERS}" ]]; then
     REMOTE_WORKER_COUNT="${#REMOTE_SERVERS_ARRAY[@]}"
 fi
 
-if [[ -z "${TOTAL_WORKERS}" ]]; then
-    if [[ "${REMOTE_WORKER_COUNT}" -gt 0 ]]; then
-        TOTAL_WORKERS="$((REMOTE_WORKER_COUNT + 1))"
+if [[ -z "${WORKERS_LIST}" ]]; then
+    if [[ -n "${TOTAL_WORKERS}" ]]; then
+        WORKERS_LIST="${TOTAL_WORKERS}"
     else
-        TOTAL_WORKERS="4"
+        WORKERS_LIST="1 2 4"
     fi
-fi
-
-LOCAL_WORKER_COUNT="$((TOTAL_WORKERS - REMOTE_WORKER_COUNT))"
-
-if [[ "${LOCAL_WORKER_COUNT}" -lt 0 ]]; then
-    echo "TOTAL_WORKERS (${TOTAL_WORKERS}) cannot be smaller than remote workers (${REMOTE_WORKER_COUNT})" >&2
-    exit 1
-fi
-
-if [[ -n "${DIRECT_UPSTREAM_SERVERS}" && "${LOCAL_WORKER_COUNT}" -eq 0 ]]; then
-    echo "Warning: all workers are remote; VM1 will only run NGINX and benchmarks." >&2
 fi
 
 mkdir -p "${RESULTS_DIR}"
@@ -61,22 +56,24 @@ fi
 printf 'architecture,workers,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error\n' > "${OUT_FILE}"
 
 write_nginx_conf() {
-    local workers="$1"
+    local local_workers="$1"
+    shift
+    local remote_servers=("$@")
 
     tmp_file=$(mktemp)
     {
         echo "upstream ticket_workers {"
         echo "    least_conn;"
-        if [[ -n "${DIRECT_UPSTREAM_SERVERS}" ]]; then
-            for i in $(seq 1 "${workers}"); do
+        if [[ "${#remote_servers[@]}" -gt 0 ]]; then
+            for i in $(seq 1 "${local_workers}"); do
                 port=$((8000 + i))
                 echo "    server ${LOCAL_UPSTREAM_HOST}:${port};"
             done
-            for server in ${REMOTE_SERVERS_ARRAY[@]}; do
+            for server in "${remote_servers[@]}"; do
                 echo "    server ${server};"
             done
         else
-            for i in $(seq 1 "${workers}"); do
+            for i in $(seq 1 "${local_workers}"); do
                 port=$((8000 + i))
                 echo "    server 127.0.0.1:${port};"
             done
@@ -126,16 +123,50 @@ run_and_append() {
     echo "direct,${workers},${model},${operations},${elapsed},${throughput},${success},${sold_out},${seat_taken},${duplicate},${error}" >> "${OUT_FILE}"
 }
 
-bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
-bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${LOCAL_WORKER_COUNT}"
-write_nginx_conf "${LOCAL_WORKER_COUNT}"
-sleep 2
+for total_workers in ${WORKERS_LIST}; do
+    if ! [[ "${total_workers}" =~ ^[0-9]+$ ]] || [[ "${total_workers}" -lt 1 ]]; then
+        echo "Invalid workers value in WORKERS_LIST: ${total_workers}" >&2
+        exit 1
+    fi
 
-curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
-run_and_append "${LOCAL_WORKER_COUNT}" "unnumbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+    selected_remote_servers=()
+    if [[ "${REMOTE_WORKER_COUNT}" -gt 0 ]]; then
+        remote_to_use="${total_workers}"
+        if [[ "${remote_to_use}" -gt "${REMOTE_WORKER_COUNT}" ]]; then
+            remote_to_use="${REMOTE_WORKER_COUNT}"
+        fi
 
-curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
-run_and_append "${LOCAL_WORKER_COUNT}" "numbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_numbered_rest.py --file ${NUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+        for ((i = 0; i < remote_to_use; i++)); do
+            selected_remote_servers+=("${REMOTE_SERVERS_ARRAY[$i]}")
+        done
+    fi
+
+    local_worker_count="$((total_workers - ${#selected_remote_servers[@]}))"
+    if [[ "${local_worker_count}" -lt 0 ]]; then
+        echo "Computed LOCAL_WORKER_COUNT (${local_worker_count}) is invalid for total_workers=${total_workers}" >&2
+        exit 1
+    fi
+
+    if [[ "${local_worker_count}" -eq 0 ]]; then
+        echo "Running with ${total_workers} total workers (all remote)"
+    else
+        echo "Running with ${total_workers} total workers (${local_worker_count} local, ${#selected_remote_servers[@]} remote)"
+    fi
+
+    bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+    if [[ "${local_worker_count}" -gt 0 ]]; then
+        bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${local_worker_count}"
+    fi
+
+    write_nginx_conf "${local_worker_count}" "${selected_remote_servers[@]}"
+    sleep 2
+
+    curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
+    run_and_append "${total_workers}" "unnumbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+
+    curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
+    run_and_append "${total_workers}" "numbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_numbered_rest.py --file ${NUMBERED_BENCH} --base-url ${BASE_URL} --concurrency 128"
+done
 
 bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
 

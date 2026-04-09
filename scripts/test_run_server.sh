@@ -93,6 +93,7 @@ sudo env \
     LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    WORKERS_LIST="1 2 4" \
     bash "${SCRIPT_DIR}/run_part4_multimachine_scaling_redis.sh"
 
 sudo env \
