@@ -39,6 +39,7 @@ for i in $(seq 1 "${WORKERS}"); do
     # Verificar que el puerto no esté en uso
     if netstat -tuln 2>/dev/null | grep -q ":${port} " || ss -tuln 2>/dev/null | grep -q ":${port} "; then
         echo "✗ Error: Puerto ${port} ya está en uso" >&2
+        ss -ltnp 2>/dev/null | grep ":${port} " >&2 || true
         exit 1
     fi
 

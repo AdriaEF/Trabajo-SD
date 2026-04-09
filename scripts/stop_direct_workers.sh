@@ -24,5 +24,7 @@ fi
 # Fallback cleanup in case PID file is missing/stale.
 pkill -f "uvicorn app:app --host 0.0.0.0 --port 800[1-4]" 2>/dev/null || true
 pkill -f "${APP_DIR}/.venv/bin/uvicorn app:app" 2>/dev/null || true
+pkill -f "uvicorn.*app:app.*--port 800[1-4]" 2>/dev/null || true
+pkill -f "python3\s+-m\s+uvicorn\s+app:app.*--port\s+800[1-4]" 2>/dev/null || true
 
 echo "Done"
