@@ -7,26 +7,26 @@ set -euo pipefail
 # - Starts N RabbitMQ workers pointing to RabbitMQ server
 #
 # Usage:
-#   bash test_start_workers.sh <ip_redis> <ip_rabbit> [num_workers]
+#   bash test_start_workers.sh <ip_redis> <ip_rabbit> [num_workers] [rabbit_user] [rabbit_pass]
 #
 # Example:
-#   bash test_start_workers.sh 10.54.10.105 10.54.10.105 4
+#   bash test_start_workers.sh 10.54.10.105 10.54.10.105 4 admin test
 #
 # Optional env vars:
 #   RABBITMQ_USER (default: guest)
 #   RABBITMQ_PASS (default: guest)
 
 if [[ $# -lt 2 ]]; then
-    echo "Usage: bash test_start_workers.sh <ip_redis> <ip_rabbit> [num_workers]" >&2
-    echo "Example: bash test_start_workers.sh 10.54.10.105 10.54.10.105 4" >&2
+    echo "Usage: bash test_start_workers.sh <ip_redis> <ip_rabbit> [num_workers] [rabbit_user] [rabbit_pass]" >&2
+    echo "Example: bash test_start_workers.sh 10.54.10.105 10.54.10.105 4 admin test" >&2
     exit 1
 fi
 
 REDIS_IP="$1"
 RABBITMQ_IP="$2"
 WORKERS="${3:-1}"
-RABBITMQ_USER="${RABBITMQ_USER:-guest}"
-RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
+RABBITMQ_USER="${4:-${RABBITMQ_USER:-guest}}"
+RABBITMQ_PASS="${5:-${RABBITMQ_PASS:-guest}}"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
