@@ -3,8 +3,8 @@
 
 RABBITMQ_IP="${1:-10.54.10.105}"
 RABBITMQ_PORT="${2:-5672}"
-RABBITMQ_USER="${RABBITMQ_USER:-guest}"
-RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
+RABBITMQ_USER="${3:-${RABBITMQ_USER:-guest}}"
+RABBITMQ_PASS="${4:-${RABBITMQ_PASS:-guest}}"
 
 echo "=== Diagnóstico RabbitMQ ==="
 echo "RABBITMQ_IP: $RABBITMQ_IP"

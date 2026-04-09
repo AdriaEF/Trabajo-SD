@@ -4,6 +4,9 @@
 REDIS_IP="${1:-10.54.10.105}"
 REDIS_PORT="${2:-6379}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 echo "=== Diagnóstico Redis ==="
 echo "REDIS_IP: $REDIS_IP"
 echo "REDIS_PORT: $REDIS_PORT"
@@ -42,7 +45,22 @@ echo ""
 
 # 4. Intenta con Python Redis
 echo "4. Intento con Python (Redis.from_url)..."
-python3 <<PY
+PYTHON_CMD="python3"
+VENV_CANDIDATES=(
+    "${PROJECT_ROOT}/direct/rest/service/.venv"
+    "${PROJECT_ROOT}/indirect/rabbitmq/worker/.venv"
+    "${PROJECT_ROOT}/scripts/.venv-indirect"
+    "${PROJECT_ROOT}/.venv"
+)
+
+for venv in "${VENV_CANDIDATES[@]}"; do
+    if [[ -x "${venv}/bin/python" ]] && "${venv}/bin/python" -c "import redis" >/dev/null 2>&1; then
+        PYTHON_CMD="${venv}/bin/python"
+        break
+    fi
+done
+
+"${PYTHON_CMD}" <<PY
 import sys
 try:
     from redis import Redis
