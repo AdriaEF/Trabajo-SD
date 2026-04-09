@@ -35,6 +35,20 @@ if ! command -v rabbitmqctl >/dev/null 2>&1; then
     exit 1
 fi
 
+SERVICE_NAME=""
+if systemctl list-unit-files | grep -q '^rabbitmq-server\.service'; then
+    SERVICE_NAME="rabbitmq-server"
+elif systemctl list-unit-files | grep -q '^rabbit-server\.service'; then
+    SERVICE_NAME="rabbit-server"
+fi
+
+if [[ -n "${SERVICE_NAME}" ]]; then
+    if ! sudo systemctl is-active --quiet "${SERVICE_NAME}"; then
+        echo "Starting service: ${SERVICE_NAME}"
+        sudo systemctl start "${SERVICE_NAME}"
+    fi
+fi
+
 sudo rabbitmqctl await_startup >/dev/null 2>&1 || true
 
 if sudo rabbitmqctl list_vhosts | awk '{print $1}' | grep -qx "${VHOST}"; then
