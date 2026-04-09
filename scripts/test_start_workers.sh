@@ -11,6 +11,10 @@ set -euo pipefail
 #
 # Example:
 #   bash test_start_workers.sh 10.54.10.105 10.54.10.105 4
+#
+# Optional env vars:
+#   RABBITMQ_USER (default: guest)
+#   RABBITMQ_PASS (default: guest)
 
 if [[ $# -lt 2 ]]; then
     echo "Usage: bash test_start_workers.sh <ip_redis> <ip_rabbit> [num_workers]" >&2
@@ -21,6 +25,8 @@ fi
 REDIS_IP="$1"
 RABBITMQ_IP="$2"
 WORKERS="${3:-1}"
+RABBITMQ_USER="${RABBITMQ_USER:-guest}"
+RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
@@ -30,7 +36,7 @@ DIRECT_REQ_FILE="${PROJECT_ROOT}/direct/rest/service/requirements.txt"
 RABBIT_REQ_FILE="${PROJECT_ROOT}/indirect/rabbitmq/worker/requirements.txt"
 RABBIT_WORKER_DIR="${PROJECT_ROOT}/indirect/rabbitmq/worker"
 REDIS_URL="redis://${REDIS_IP}:6379/0"
-RABBITMQ_URL="amqp://guest:guest@${RABBITMQ_IP}:5672/%2F"
+RABBITMQ_URL="amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_IP}:5672/%2F"
 PORT_BASE="${PORT_BASE:-8000}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_SLEEP_SECONDS="${HEALTH_SLEEP_SECONDS:-1}"
@@ -115,7 +121,16 @@ try:
     connection = pika.BlockingConnection(params)
     connection.close()
 except Exception as exc:
-    print(f"✗ RabbitMQ connection failed for {rabbitmq_url}: {exc}", file=sys.stderr)
+    msg = str(exc)
+    print(f"✗ RabbitMQ connection failed for {rabbitmq_url}: {msg}", file=sys.stderr)
+    if "ACCESS_REFUSED" in msg and "guest" in rabbitmq_url:
+        print(
+            "Hint: guest is usually blocked for remote logins. "
+            "Create a dedicated user on RabbitMQ host with "
+            "scripts/setup_rabbitmq_remote_user.sh and run this script with "
+            "RABBITMQ_USER/RABBITMQ_PASS.",
+            file=sys.stderr,
+        )
     sys.exit(1)
 print(f"✓ RabbitMQ connection OK: {rabbitmq_url}")
 PY
