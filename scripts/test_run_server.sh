@@ -6,10 +6,10 @@ set -euo pipefail
 # - Starts the main server with env vars pointing to remote workers and a total worker target
 #
 # Usage:
-#   bash test_run_server.sh <vm1_ip> <remote_servers> [total_workers]
+#   bash test_run_server.sh <vm1_ip> <remote_servers> [total_workers] [rabbitmq_ip]
 #
 # Example:
-#   bash test_run_server.sh 192.168.1.10 "192.168.1.11:8001 192.168.1.11:8002" 4
+#   RABBITMQ_USER=admin RABBITMQ_PASS=test bash test_run_server.sh 192.168.1.10 "192.168.1.11:8001 192.168.1.11:8002" 4 192.168.1.11
 
 if [[ $# -lt 2 ]]; then
     echo "Usage: bash test_run_server.sh <vm1_ip> <remote_servers> [total_workers]" >&2
@@ -20,6 +20,10 @@ fi
 IP="$1"
 REMOTE_SERVERS="$2"
 TOTAL_WORKERS="${3:-4}"
+RABBITMQ_IP="${4:-127.0.0.1}"
+RABBITMQ_USER="${RABBITMQ_USER:-guest}"
+RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
+RABBITMQ_URL="amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_IP}:5672/%2F"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
@@ -72,6 +76,12 @@ python3 -m pip install -r "${REQ_FILE}"
 check_service_status "redis-server"
 ensure_nginx_running
 
+echo "Precheck: RabbitMQ TCP ${RABBITMQ_IP}:5672"
+if ! nc -vz -w 2 "${RABBITMQ_IP}" 5672 >/dev/null 2>&1; then
+    echo "RabbitMQ TCP check failed: ${RABBITMQ_IP}:5672" >&2
+    exit 1
+fi
+
 echo "Precheck: remote workers"
 for server in ${REMOTE_SERVERS}; do
     wait_for_health "${server}" "${HEALTH_RETRIES}" "${HEALTH_SLEEP_SECONDS}"
@@ -87,4 +97,5 @@ sudo env \
     LOCAL_UPSTREAM_HOST="${IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    RABBITMQ_URL="${RABBITMQ_URL}" \
     bash "${SCRIPT_DIR}/run_part5_multimachine_scaling_rabbit.sh"
