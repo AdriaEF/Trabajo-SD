@@ -77,6 +77,22 @@ wait_for_rabbitmq_heartbeat() {
     return 1
 }
 
+ensure_direct_worker_ports_firewall() {
+    if ! command -v ufw >/dev/null 2>&1; then
+        echo "=== Firewall (UFW) ==="
+        echo "⚠ ufw not installed, skipping firewall rule check"
+        return
+    fi
+
+    echo "=== Firewall (UFW) ==="
+    sudo ufw status || true
+    if sudo ufw status | grep -q "Status: active"; then
+        sudo ufw allow 8001:8004/tcp
+    else
+        echo "UFW is inactive, no rule changes needed"
+    fi
+}
+
 if [[ ! -d "${VENV_PATH}" ]]; then
     python3 -m venv "${VENV_PATH}"
 fi
@@ -148,6 +164,7 @@ done
 
 echo ""
 echo "=== Starting Direct REST workers ==="
+ensure_direct_worker_ports_firewall
 export REDIS_URL="${REDIS_URL}" WORKERS="${WORKERS}"
 bash "${SCRIPT_DIR}/start_direct_workers_multimachine.sh"
 

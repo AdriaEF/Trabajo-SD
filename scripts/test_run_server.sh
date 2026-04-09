@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Automatic start for testing (multi-machine direct scaling).
-# - Ensures Python venv + direct requirements
-# - Starts the main server with env vars pointing to remote workers and a total worker target
+# Automatic multi-machine full test suite execution (Parts 4-7).
+# Executes all scaling and fault injection experiments end-to-end:
+#   Part 4: Direct REST scaling
+#   Part 5: RabbitMQ scaling
+#   Part 6: Hotspot experiment (80/5)
+#   Part 7: Fault injection scenarios
 #
 # Usage:
 #   bash test_run_server.sh <server_ip> <remote_servers> [total_workers] [rabbitmq_ip] [rabbitmq_user] [rabbitmq_pass]
 #
 # Example:
-#   bash test_run_server.sh 192.168.1.10 "192.168.1.11:8001 192.168.1.11:8002" 4 192.168.1.11 admin test
+#   bash test_run_server.sh 192.168.247.247 "192.168.247.112:8001 192.168.247.112:8002 192.168.247.112:8003 192.168.247.112:8004" 4 192.168.247.247 admin test
 
 if [[ $# -lt 2 ]]; then
     echo "Usage: bash test_run_server.sh <server_ip> <remote_servers> [total_workers] [rabbitmq_ip] [rabbitmq_user] [rabbitmq_pass]" >&2
@@ -98,3 +101,17 @@ sudo env \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
     RABBITMQ_URL="${RABBITMQ_URL}" \
     bash "${SCRIPT_DIR}/run_part5_multimachine_scaling_rabbit.sh"
+
+sudo env \
+    LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
+    DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
+    TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    RABBITMQ_URL="${RABBITMQ_URL}" \
+    bash "${SCRIPT_DIR}/run_part6_multimachine_hotspot_experiment.sh"
+
+sudo env \
+    LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
+    DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
+    TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    RABBITMQ_URL="${RABBITMQ_URL}" \
+    bash "${SCRIPT_DIR}/run_part7_multimachine_fault_injection.sh"

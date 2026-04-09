@@ -16,6 +16,11 @@ NUMBERED_BENCH="${PROJECT_ROOT}/benchmarks/benchmark_numbered_60000.txt"
 RABBITMQ_URL="${RABBITMQ_URL:-amqp://guest:guest@127.0.0.1:5672/%2F}"
 REQUEST_QUEUE="${REQUEST_QUEUE:-tickets.buy}"
 INFLIGHT="${INFLIGHT:-256}"
+BENCH_PYTHON="${PROJECT_ROOT}/scripts/.venv-indirect/bin/python"
+
+if [[ ! -x "${BENCH_PYTHON}" ]]; then
+    BENCH_PYTHON="python3"
+fi
 
 mkdir -p "${RESULTS_DIR}"
 
@@ -50,10 +55,10 @@ for workers in 1 2 4; do
     sleep 2
 
     bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
-    run_and_append "${workers}" "unnumbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    run_and_append "${workers}" "unnumbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 
     bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
-    run_and_append "${workers}" "numbered" "python3 ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    run_and_append "${workers}" "numbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
 done
 
 bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
