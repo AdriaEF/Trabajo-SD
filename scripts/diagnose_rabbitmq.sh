@@ -3,10 +3,13 @@
 
 RABBITMQ_IP="${1:-10.54.10.105}"
 RABBITMQ_PORT="${2:-5672}"
+RABBITMQ_USER="${RABBITMQ_USER:-guest}"
+RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
 
 echo "=== Diagnóstico RabbitMQ ==="
 echo "RABBITMQ_IP: $RABBITMQ_IP"
 echo "RABBITMQ_PORT: $RABBITMQ_PORT"
+echo "RABBITMQ_USER: $RABBITMQ_USER"
 echo ""
 
 # 1. Ping por IP
@@ -56,14 +59,22 @@ if [[ -d "${VENV_PATH}" ]]; then
     source "${VENV_PATH}/bin/activate"
 fi
 
-python3 - <<PY
+export RABBITMQ_IP RABBITMQ_PORT RABBITMQ_USER RABBITMQ_PASS
+python3 - <<'PY'
+import os
 import sys
 try:
     import pika
-    params = pika.URLParameters(f"amqp://guest:guest@$RABBITMQ_IP:$RABBITMQ_PORT/%2F")
+    rabbitmq_ip = os.environ["RABBITMQ_IP"]
+    rabbitmq_port = os.environ["RABBITMQ_PORT"]
+    rabbitmq_user = os.environ["RABBITMQ_USER"]
+    rabbitmq_pass = os.environ["RABBITMQ_PASS"]
+
+    url = f"amqp://{rabbitmq_user}:{rabbitmq_pass}@{rabbitmq_ip}:{rabbitmq_port}/%2F"
+    params = pika.URLParameters(url)
     conn = pika.BlockingConnection(params)
     conn.close()
-    print(f"✓ Python pika OK - Conexión establecida a amqp://{$RABBITMQ_IP}:{$RABBITMQ_PORT}")
+    print(f"✓ Python pika OK - Conexion establecida a amqp://{rabbitmq_user}@{rabbitmq_ip}:{rabbitmq_port}")
 except Exception as e:
     print(f"✗ Error: {e}")
     sys.exit(1)

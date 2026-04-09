@@ -4,6 +4,7 @@ set -euo pipefail
 # Debian bootstrap for this project.
 # What it does:
 # 1) Checks and installs required system packages.
+#    Includes helper tools used by diagnostics and worker management scripts.
 # 2) Enables/starts Redis, RabbitMQ, and NGINX services.
 # 3) Creates Python virtual environments and installs requirements by component.
 #
@@ -114,10 +115,14 @@ main() {
         install_pkg_if_missing python3
         install_pkg_if_missing python3-venv
         install_pkg_if_missing python3-pip
+        install_pkg_if_missing procps
+        install_pkg_if_missing iproute2
+        install_pkg_if_missing net-tools
         install_pkg_if_missing redis-server
         install_pkg_if_missing rabbitmq-server
         install_pkg_if_missing nginx
         install_pkg_if_missing curl
+        install_pkg_if_missing netcat-openbsd
         install_pkg_if_missing redis-tools
         install_pkg_if_missing git
     else

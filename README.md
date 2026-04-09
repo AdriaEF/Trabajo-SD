@@ -40,6 +40,7 @@ Implementacion y documentacion completas por fases:
 
 - Python 3.10+
 - Linux VM para validacion final (recomendado por el enunciado)
+- `nc` (paquete `netcat-openbsd`) para checks TCP en scripts de prueba
 - Para Parte 5 en adelante: RabbitMQ disponible
 
 Dependencias Python principales:
