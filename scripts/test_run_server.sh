@@ -6,23 +6,22 @@ set -euo pipefail
 # - Starts the main server with env vars pointing to remote workers and a total worker target
 #
 # Usage:
-#   bash test_run_server.sh <vm1_ip> <remote_servers> [total_workers] [rabbitmq_ip]
+#   bash test_run_server.sh <server_ip> <remote_servers> [total_workers] [rabbitmq_ip] [rabbitmq_user] [rabbitmq_pass]
 #
 # Example:
-#   RABBITMQ_USER=admin RABBITMQ_PASS=test bash test_run_server.sh 192.168.1.10 "192.168.1.11:8001 192.168.1.11:8002" 4 192.168.1.11
+#   bash test_run_server.sh 192.168.1.10 "192.168.1.11:8001 192.168.1.11:8002" 4 192.168.1.11 admin test
 
 if [[ $# -lt 2 ]]; then
-    echo "Usage: bash test_run_server.sh <vm1_ip> <remote_servers> [total_workers]" >&2
-    echo "Example: bash test_run_server.sh 192.168.1.10 \"192.168.1.11:8001 192.168.1.11:8002\" 4" >&2
+    echo "Usage: bash test_run_server.sh <server_ip> <remote_servers> [total_workers] [rabbitmq_ip] [rabbitmq_user] [rabbitmq_pass]" >&2
     exit 1
 fi
 
-IP="$1"
+SERVER_IP="$1"
 REMOTE_SERVERS="$2"
 TOTAL_WORKERS="${3:-4}"
 RABBITMQ_IP="${4:-127.0.0.1}"
-RABBITMQ_USER="${RABBITMQ_USER:-guest}"
-RABBITMQ_PASS="${RABBITMQ_PASS:-guest}"
+RABBITMQ_USER="${5:-${RABBITMQ_USER:-guest}}"
+RABBITMQ_PASS="${6:-${RABBITMQ_PASS:-guest}}"
 RABBITMQ_URL="amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_IP}:5672/%2F"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -88,13 +87,13 @@ for server in ${REMOTE_SERVERS}; do
 done
 
 sudo env \
-    LOCAL_UPSTREAM_HOST="${IP}" \
+    LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
     bash "${SCRIPT_DIR}/run_part4_multimachine_scaling_redis.sh"
 
 sudo env \
-    LOCAL_UPSTREAM_HOST="${IP}" \
+    LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
     RABBITMQ_URL="${RABBITMQ_URL}" \
