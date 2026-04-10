@@ -1,0 +1,7 @@
+architecture,workers,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error
+indirect,1,unnumbered,20000,128.6672,155.44,20000,0,0,0,0
+indirect,1,numbered,25997,171.6422,151.46,20000,0,5997,0,0
+indirect,2,unnumbered,20000,124.2658,160.95,20000,0,0,0,0
+indirect,2,numbered,25997,157.2601,165.31,20000,0,5997,0,0
+indirect,4,unnumbered,20000,129.3882,154.57,20000,0,0,0,0
+indirect,4,numbered,25997,166.4638,156.17,20000,0,5997,0,0

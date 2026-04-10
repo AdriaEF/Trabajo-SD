@@ -1,0 +1,4 @@
+scenario,architecture,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error,notes
+kill_worker,direct,numbered_hotspot,25997,46.2630,561.94,5557,0,20434,0,6,killed_direct_worker_pid_85066_correctness_requires_seat_uniqueness_check_after_kill
+kill_worker,indirect,numbered_hotspot,,,,,0,0,0,0,killed_rabbit_worker_pid_85427_correctness_requires_seat_uniqueness_check_after_kill
+restart_redis,direct,unnumbered,20000,41.2522,484.82,19919,0,0,0,81,redis_restart_cmd_exit_0_correctness_warning_unnumbered_success_19919_after_redis_restart
