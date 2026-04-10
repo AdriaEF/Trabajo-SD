@@ -16,7 +16,7 @@ Validar correccion y escalabilidad para 20.000 entradas en dos modelos:
 
 ## Estado del proyecto
 
-Implementacion y documentacion completas por fases:
+Implementacion y documentacion por fases:
 
 - Parte 1: arquitectura base y entorno
 - Parte 2: unnumbered por REST
@@ -75,11 +75,12 @@ python scripts/benchmark_rabbitmq.py --help
 
 - `scripts/start_direct_workers.sh`: arranque de workers REST (puertos 8001..N)
 - `scripts/stop_direct_workers.sh`: parada de workers REST
-- `scripts/run_part4_scaling_experiment.sh`: experimento directa 1/2/4 workers
-- `scripts/run_part5_scaling_experiment.sh`: experimento indirecta 1/2/4 workers
+- `scripts/test_run_server.sh`: orquestacion multimquina de Partes 4-7
+- `scripts/run_part4_multimachine_scaling_redis.sh`: experimento directa 1/2/4 workers
+- `scripts/run_part5_multimachine_scaling_rabbit.sh`: experimento indirecta 1/2/4 workers
 - `scripts/generate_hotspot_numbered.py`: generador de carga hotspot 80/5
-- `scripts/run_part6_hotspot_experiment.sh`: comparativa directa vs indirecta en hotspot
-- `scripts/run_part7_fault_injection.sh`: escenarios de fallo controlado
+- `scripts/run_part6_multimachine_hotspot_experiment.sh`: comparativa directa vs indirecta en hotspot
+- `scripts/run_part7_multimachine_fault_injection.sh`: escenarios de fallo controlado
 - `scripts/build_plots.py`: generacion de graficas finales
 
 ## Documentacion recomendada
@@ -96,3 +97,4 @@ python scripts/benchmark_rabbitmq.py --help
 - Desarrollo diario en Windows.
 - Validacion y evidencia final en Linux VM.
 - Los resultados (CSV/PNG) se generan al ejecutar los scripts de experimento.
+- Para el flujo completo multimquina, usar `scripts/test_run_server.sh`.

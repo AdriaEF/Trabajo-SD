@@ -179,13 +179,12 @@ Comenzar por la Parte 1: diseno base + stack tecnico + estructura del repo.
 - Runner de benchmark unnumbered creado
 - Parte 3 implementada en version inicial (numbered REST + control atomico por asiento)
 - Runner de benchmark numbered creado
-- Parte 4 preparada (NGINX + scripts de escalado + salida CSV)
-- Parte 5 iniciada (worker RabbitMQ + benchmark RPC basico)
-- Parte 5 mejorada (benchmark concurrente + experimento 1/2/4 workers)
-- Parte 6 implementada (generador hotspot 80/5 + experimento comparativo directa/indirecta)
-- Parte 7 implementada (fault injection script + guia)
-- Parte 8 preparada (script de graficas + guia de cierre)
+- Parte 4 implementada y validada (NGINX + escalado 1/2/4 + CSV)
+- Parte 5 implementada y validada (RabbitMQ + benchmark concurrente + escalado 1/2/4)
+- Parte 6 implementada y validada (hotspot 80/5 + comparacion directa/indirecta)
+- Parte 7 implementada y validada (fault injection + guia)
+- Parte 8 preparada, pendiente de ejecutar el generador de graficas y cerrar el informe
 
 ## Siguiente accion inmediata
 
-Ejecutar en VM Partes 4-7, generar graficas de Parte 8 y redactar informe PDF final.
+Ejecutar la Parte 8 sobre los CSV ya generados, producir las graficas en `results/plots/` y cerrar el informe PDF final.
