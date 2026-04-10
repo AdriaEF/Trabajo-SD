@@ -25,49 +25,20 @@ RABBITMQ_URL="${RABBITMQ_URL:-amqp://guest:guest@127.0.0.1:5672/%2F}"
 REQUEST_QUEUE="${REQUEST_QUEUE:-tickets.buy}"
 INFLIGHT="${INFLIGHT:-256}"
 BENCH_PYTHON="${PROJECT_ROOT}/scripts/.venv-indirect/bin/python"
+WORKERS_LIST="${WORKERS_LIST:-1 2 4}"
+TOTAL_WORKERS="${TOTAL_WORKERS:-4}"
 
 if [[ ! -x "${BENCH_PYTHON}" ]]; then
     BENCH_PYTHON="python3"
 fi
 
-REMOTE_WORKER_HOSTS="${REMOTE_WORKER_HOSTS:-}"
-TOTAL_WORKERS="${TOTAL_WORKERS:-}"
-
-# Parse remote hosts list and compute remote worker count.
-REMOTE_TOKENS=()
-REMOTE_WORKER_COUNT=0
-if [[ -n "${REMOTE_WORKER_HOSTS}" ]]; then
-    read -r -a REMOTE_TOKENS <<< "${REMOTE_WORKER_HOSTS}"
-    for tok in "${REMOTE_TOKENS[@]}"; do
-        if [[ "${tok}" =~ ^([^:]+):([0-9]+)$ ]]; then
-            count="${BASH_REMATCH[2]}"
-            REMOTE_WORKER_COUNT=$((REMOTE_WORKER_COUNT + count))
-        else
-            # token without count -> one worker
-            REMOTE_WORKER_COUNT=$((REMOTE_WORKER_COUNT + 1))
-        fi
-    done
-fi
-
-# Determine total and local worker counts
-if [[ -z "${TOTAL_WORKERS}" ]]; then
-    if [[ "${REMOTE_WORKER_COUNT}" -gt 0 ]]; then
-        TOTAL_WORKERS="$((REMOTE_WORKER_COUNT + 1))"
-    else
-        TOTAL_WORKERS="4"
+# Validate WORKERS_LIST values
+for workers_count in ${WORKERS_LIST}; do
+    if ! [[ "${workers_count}" =~ ^[0-9]+$ ]] || [[ "${workers_count}" -lt 1 ]]; then
+        echo "Invalid worker count in WORKERS_LIST: ${workers_count}" >&2
+        exit 1
     fi
-fi
-
-LOCAL_WORKER_COUNT="$((TOTAL_WORKERS - REMOTE_WORKER_COUNT))"
-
-if [[ "${LOCAL_WORKER_COUNT}" -lt 0 ]]; then
-    echo "TOTAL_WORKERS (${TOTAL_WORKERS}) cannot be smaller than remote workers (${REMOTE_WORKER_COUNT})" >&2
-    exit 1
-fi
-
-if [[ -n "${REMOTE_WORKER_HOSTS}" && "${LOCAL_WORKER_COUNT}" -eq 0 ]]; then
-    echo "Warning: all workers are remote; this machine will only run benchmarks." >&2
-fi
+done
 
 mkdir -p "${RESULTS_DIR}"
 echo "architecture,workers,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error" > "${OUT_FILE}"
@@ -94,17 +65,25 @@ run_and_append() {
     echo "indirect,${workers},${model},${operations},${elapsed},${throughput},${success},${sold_out},${seat_taken},${duplicate},${error}" >> "${OUT_FILE}"
 }
 
-# Stop/start only local workers
-bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
-bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${LOCAL_WORKER_COUNT}"
-sleep 2
+# Scaling loop: test each worker count
+for total_workers in ${WORKERS_LIST}; do
+    if ! [[ "${total_workers}" =~ ^[0-9]+$ ]] || [[ "${total_workers}" -lt 1 ]]; then
+        echo "Invalid workers value in WORKERS_LIST: ${total_workers}" >&2
+        exit 1
+    fi
 
-# Run benchmarks (ensure remote workers are already running if any)
-bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
-run_and_append "${TOTAL_WORKERS}" "unnumbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    echo "Running with ${total_workers} total workers"
 
-bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
-run_and_append "${TOTAL_WORKERS}" "numbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+    bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${total_workers}"
+    sleep 2
+
+    bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
+    run_and_append "${total_workers}" "unnumbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model unnumbered --file ${UNNUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+
+    bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
+    run_and_append "${total_workers}" "numbered" "${BENCH_PYTHON} ${PROJECT_ROOT}/scripts/benchmark_rabbitmq.py --model numbered --file ${NUMBERED_BENCH} --rabbitmq-url ${RABBITMQ_URL} --request-queue ${REQUEST_QUEUE} --inflight ${INFLIGHT}"
+done
 
 bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
 

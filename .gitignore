@@ -6,6 +6,7 @@ benchmarks/benchmark_numbered_hotspot_80_5.txt
 
 # Generated experiment outputs
 results/
+plots/
 
 # Worker logs & PIDs
 scripts/*.log

@@ -89,6 +89,8 @@ for server in ${REMOTE_SERVERS}; do
     wait_for_health "${server}" "${HEALTH_RETRIES}" "${HEALTH_SLEEP_SECONDS}"
 done
 
+echo "Using remote upstream servers: ${REMOTE_SERVERS}"
+
 sudo env \
     LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
@@ -100,6 +102,7 @@ sudo env \
     LOCAL_UPSTREAM_HOST="${SERVER_IP}" \
     DIRECT_UPSTREAM_SERVERS="${REMOTE_SERVERS}" \
     TOTAL_WORKERS="${TOTAL_WORKERS}" \
+    WORKERS_LIST="1 2 4" \
     RABBITMQ_URL="${RABBITMQ_URL}" \
     bash "${SCRIPT_DIR}/run_part5_multimachine_scaling_rabbit.sh"
 
