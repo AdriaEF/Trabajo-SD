@@ -1,0 +1,110 @@
+=== RabbitMQ Worker 2 startup at divendres, 10 d’abril de 2026, 23:22:40 CEST ===
+RABBITMQ_URL=amqp://admin:test@192.168.247.247:5672/%2F
+WORKER_ID=rabbit-worker-2
+ [*] Worker rabbit-worker-2 waiting on queue 'tickets.buy'
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=true total=0
+[Progress] worker=rabbit-worker-2 processed=1 (SUCCESS:1 DUPLICATE:0 SEAT_TAKEN:0 SOLD_OUT:0 ERROR:0) - Rate: 0.0 msg/s
+[Progress] worker=rabbit-worker-2 processed=135 (SUCCESS:120 DUPLICATE:0 SEAT_TAKEN:15 SOLD_OUT:0 ERROR:0) - Rate: 26.7 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=193 rate=19.3msg/s total=193 (SUCCESS:154 DUPLICATE:0 SEAT_TAKEN:39 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=275 (SUCCESS:202 DUPLICATE:0 SEAT_TAKEN:73 SOLD_OUT:0 ERROR:0) - Rate: 27.6 msg/s
+[Progress] worker=rabbit-worker-2 processed=386 (SUCCESS:250 DUPLICATE:0 SEAT_TAKEN:136 SOLD_OUT:0 ERROR:0) - Rate: 22.0 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=244 rate=24.4msg/s total=437 (SUCCESS:267 DUPLICATE:0 SEAT_TAKEN:170 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=542 (SUCCESS:304 DUPLICATE:0 SEAT_TAKEN:238 SOLD_OUT:0 ERROR:0) - Rate: 30.9 msg/s
+[Progress] worker=rabbit-worker-2 processed=687 (SUCCESS:355 DUPLICATE:0 SEAT_TAKEN:332 SOLD_OUT:0 ERROR:0) - Rate: 28.6 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=279 rate=27.9msg/s total=716 (SUCCESS:362 DUPLICATE:0 SEAT_TAKEN:354 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=824 (SUCCESS:392 DUPLICATE:0 SEAT_TAKEN:432 SOLD_OUT:0 ERROR:0) - Rate: 27.4 msg/s
+[Progress] worker=rabbit-worker-2 processed=958 (SUCCESS:424 DUPLICATE:0 SEAT_TAKEN:534 SOLD_OUT:0 ERROR:0) - Rate: 26.5 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=268 rate=26.8msg/s total=984 (SUCCESS:428 DUPLICATE:0 SEAT_TAKEN:556 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=1051 (SUCCESS:437 DUPLICATE:0 SEAT_TAKEN:614 SOLD_OUT:0 ERROR:0) - Rate: 18.4 msg/s
+[Progress] worker=rabbit-worker-2 processed=1159 (SUCCESS:456 DUPLICATE:0 SEAT_TAKEN:703 SOLD_OUT:0 ERROR:0) - Rate: 21.4 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=198 rate=19.8msg/s total=1182 (SUCCESS:460 DUPLICATE:0 SEAT_TAKEN:722 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=1287 (SUCCESS:489 DUPLICATE:0 SEAT_TAKEN:798 SOLD_OUT:0 ERROR:0) - Rate: 25.6 msg/s
+[Progress] worker=rabbit-worker-2 processed=1472 (SUCCESS:529 DUPLICATE:0 SEAT_TAKEN:943 SOLD_OUT:0 ERROR:0) - Rate: 37.0 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=325 rate=32.5msg/s total=1507 (SUCCESS:534 DUPLICATE:0 SEAT_TAKEN:973 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=1596 (SUCCESS:554 DUPLICATE:0 SEAT_TAKEN:1042 SOLD_OUT:0 ERROR:0) - Rate: 24.8 msg/s
+[Progress] worker=rabbit-worker-2 processed=1718 (SUCCESS:575 DUPLICATE:0 SEAT_TAKEN:1143 SOLD_OUT:0 ERROR:0) - Rate: 24.3 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=239 rate=23.9msg/s total=1746 (SUCCESS:579 DUPLICATE:0 SEAT_TAKEN:1167 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=1856 (SUCCESS:598 DUPLICATE:0 SEAT_TAKEN:1258 SOLD_OUT:0 ERROR:0) - Rate: 27.5 msg/s
+[Progress] worker=rabbit-worker-2 processed=2000 (SUCCESS:624 DUPLICATE:0 SEAT_TAKEN:1376 SOLD_OUT:0 ERROR:0) - Rate: 29.8 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=281 rate=28.1msg/s total=2027 (SUCCESS:631 DUPLICATE:0 SEAT_TAKEN:1396 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=2105 (SUCCESS:642 DUPLICATE:0 SEAT_TAKEN:1463 SOLD_OUT:0 ERROR:0) - Rate: 21.0 msg/s
+[Progress] worker=rabbit-worker-2 processed=2273 (SUCCESS:681 DUPLICATE:0 SEAT_TAKEN:1592 SOLD_OUT:0 ERROR:0) - Rate: 33.3 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=284 rate=28.4msg/s total=2311 (SUCCESS:683 DUPLICATE:0 SEAT_TAKEN:1628 SOLD_OUT:0 ERROR:0)
+[Progress] worker=rabbit-worker-2 processed=2409 (SUCCESS:700 DUPLICATE:0 SEAT_TAKEN:1709 SOLD_OUT:0 ERROR:0) - Rate: 27.1 msg/s
+[Progress] worker=rabbit-worker-2 processed=2540 (SUCCESS:724 DUPLICATE:0 SEAT_TAKEN:1816 SOLD_OUT:0 ERROR:0) - Rate: 26.2 msg/s
+[Heartbeat] worker=rabbit-worker-2 queue=tickets.buy idle=false delta=263 rate=26.3msg/s total=2574 (SUCCESS:730 DUPLICATE:0 SEAT_TAKEN:1844 SOLD_OUT:0 ERROR:0)
