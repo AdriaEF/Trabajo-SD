@@ -21,6 +21,7 @@ INSTALL_PYTHON_ENVS="${INSTALL_PYTHON_ENVS:-1}"
 ENABLE_SERVICES="${ENABLE_SERVICES:-1}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY_REQ_FILE="$PROJECT_ROOT/requirements.txt"
 
 APT_UPDATED=0
 
@@ -141,25 +142,25 @@ main() {
     if [[ "$INSTALL_PYTHON_ENVS" == "1" ]]; then
         log "Preparing Python virtual environments"
         # Shared project venv used by orchestration scripts (for example test_run_server.sh).
-        # Include report deps here so scripts/build_plots.py works out of the box.
+        # Single consolidated requirements file for all project components.
         install_python_requirements \
-            "$PROJECT_ROOT/scripts/requirements_report.txt" \
+            "$PY_REQ_FILE" \
             "$PROJECT_ROOT/.venv"
 
         install_python_requirements \
-            "$PROJECT_ROOT/direct/rest/service/requirements.txt" \
+            "$PY_REQ_FILE" \
             "$PROJECT_ROOT/direct/rest/service/.venv"
 
         install_python_requirements \
-            "$PROJECT_ROOT/indirect/rabbitmq/worker/requirements.txt" \
+            "$PY_REQ_FILE" \
             "$PROJECT_ROOT/indirect/rabbitmq/worker/.venv"
 
         install_python_requirements \
-            "$PROJECT_ROOT/scripts/requirements_indirect.txt" \
+            "$PY_REQ_FILE" \
             "$PROJECT_ROOT/scripts/.venv-indirect"
 
         install_python_requirements \
-            "$PROJECT_ROOT/scripts/requirements_report.txt" \
+            "$PY_REQ_FILE" \
             "$PROJECT_ROOT/scripts/.venv-report"
     else
         log "Skipping Python virtualenv setup"

@@ -6,14 +6,14 @@ Consolidar resultados, generar graficas y cerrar memoria tecnica.
 
 ## Scripts y artefactos
 
-- Dependencias para graficas: scripts/requirements_report.txt
+- Dependencias para graficas: requirements.txt
 - Generador de graficas: scripts/build_plots.py
 
 ## Ejecucion (Linux VM)
 
 1. Instalar dependencias:
 
-pip install -r scripts/requirements_report.txt
+pip install -r requirements.txt
 
 2. Generar graficas:
 

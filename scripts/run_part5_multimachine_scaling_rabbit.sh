@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Multimachine version of run_part5_scaling_experiment.sh
+# Multimachine version of run_part5_scaling_rabbit.sh
 # Usage example:
 #   REMOTE_WORKER_HOSTS="host1:2 host2:1" \
 #   TOTAL_WORKERS=4 \
 #   RABBITMQ_URL="amqp://guest:guest@10.0.0.10:5672/%2F" \
-#   bash scripts/run_part5_multimachine_experiment.sh
+#   bash scripts/run_part5_multimachine_scaling_rabbit.sh
 #
 # Notes:
 # - Start remote workers manually on the remote hosts before running, or use your own orchestration.

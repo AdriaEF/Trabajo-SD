@@ -16,9 +16,7 @@ chmod +x "${SCRIPT_DIR}"/*.sh
 
 python3 -m venv "${VENV_PATH}"
 source "${VENV_PATH}/bin/activate"
-pip install -r "${PROJECT_ROOT}/direct/rest/service/requirements.txt"
-pip install -r "${SCRIPT_DIR}/requirements_indirect.txt"
-pip install -r "${SCRIPT_DIR}/requirements_report.txt"
+pip install -r "${PROJECT_ROOT}/requirements.txt"
 
 echo ""
 echo "================================================================================"
@@ -65,7 +63,7 @@ sudo cp "${PROJECT_ROOT}/direct/rest/nginx/ticket_lb.conf" /etc/nginx/conf.d/tic
 sudo nginx -t
 sudo systemctl reload nginx
 curl -s http://127.0.0.1:8080/health
-bash "${SCRIPT_DIR}/run_part4_scaling_experiment.sh"
+bash "${SCRIPT_DIR}/run_part4_scaling_redis.sh"
 
 # Resultado esperado: Se genera results/direct_scaling_results.csv.
 
@@ -75,10 +73,13 @@ echo "================= SMOKE TEST ARQUITECTURA INDIRECTA (RABBITMQ) ===========
 echo "================================================================================"
 echo ""
 
+RABBITMQ_URL="amqp://guest:guest@127.0.0.1:5672/%2F"
+export RABBITMQ_URL
+
 sudo bash "${SCRIPT_DIR}/stop_rabbitmq_workers.sh" || true
-bash "${SCRIPT_DIR}/start_rabbitmq_workers.sh" 4
+WORKERS=4 bash "${SCRIPT_DIR}/start_rabbitmq_workers.sh"
 bash "${SCRIPT_DIR}/reset_ticket_state.sh"
-python3 "${SCRIPT_DIR}/benchmark_rabbitmq.py" --model unnumbered --file "${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt" --rabbitmq-url amqp://guest:guest@127.0.0.1:5672/%2F --request-queue tickets.buy --inflight 256
+python3 "${SCRIPT_DIR}/benchmark_rabbitmq.py" --model unnumbered --file "${PROJECT_ROOT}/benchmarks/benchmark_unnumbered_20000.txt" --rabbitmq-url "${RABBITMQ_URL}" --request-queue tickets.buy --inflight 256
 
 # Resultado esperado: SUCCESS cerca de 20000.
 
@@ -88,7 +89,7 @@ echo "====================== TEST COMPLETO INDIRECTO (PARTE 5) =================
 echo "================================================================================"
 echo ""
 
-bash "${SCRIPT_DIR}/run_part5_scaling_experiment.sh"
+bash "${SCRIPT_DIR}/run_part5_scaling_rabbit.sh"
 
 # Resultado esperado: Se genera results/indirect_scaling_results.csv.
 

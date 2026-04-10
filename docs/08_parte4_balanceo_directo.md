@@ -9,7 +9,7 @@ Comparar rendimiento al escalar workers REST: 1, 2 y 4.
 - Config de NGINX: `direct/rest/nginx/ticket_lb.conf`
 - Arranque multi-worker: `scripts/start_direct_workers.sh`
 - Parada de workers: `scripts/stop_direct_workers.sh`
-- Experimento automatizado: `scripts/run_part4_scaling_experiment.sh`
+- Experimento automatizado: `scripts/run_part4_scaling_redis.sh`
 
 ## Flujo
 
@@ -25,7 +25,7 @@ sudo systemctl restart nginx
 
 3. Lanzar experimento:
 
-bash scripts/run_part4_scaling_experiment.sh
+bash scripts/run_part4_scaling_redis.sh
 
 4. Revisar CSV:
 

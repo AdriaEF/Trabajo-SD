@@ -68,7 +68,7 @@ Nota: En las dos vm, ejecutar venv y comporbar requerimientos antes de ejcutar c
 
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r direct/rest/service/requirements.txt
+python3 -m pip install -r requirements.txt
 
 ## 4) Arrancar worker remoto en VM2
 

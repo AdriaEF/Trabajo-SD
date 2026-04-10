@@ -32,8 +32,7 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_PATH="${PROJECT_ROOT}/.venv"
-DIRECT_REQ_FILE="${PROJECT_ROOT}/direct/rest/service/requirements.txt"
-RABBIT_REQ_FILE="${PROJECT_ROOT}/indirect/rabbitmq/worker/requirements.txt"
+REQ_FILE="${PROJECT_ROOT}/requirements.txt"
 RABBIT_WORKER_DIR="${PROJECT_ROOT}/indirect/rabbitmq/worker"
 REDIS_URL="redis://${REDIS_IP}:6379/0"
 RABBITMQ_URL="amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_IP}:5672/%2F"
@@ -101,10 +100,10 @@ fi
 source "${VENV_PATH}/bin/activate"
 
 echo "=== Installing Direct REST dependencies ==="
-python3 -m pip install -r "${DIRECT_REQ_FILE}" --quiet
+python3 -m pip install -r "${REQ_FILE}" --quiet
 
 echo "=== Installing RabbitMQ worker dependencies ==="
-python3 -m pip install -r "${RABBIT_REQ_FILE}" --quiet
+python3 -m pip install -r "${REQ_FILE}" --quiet
 
 echo ""
 echo "=== Precheck: Redis ${REDIS_URL} ==="

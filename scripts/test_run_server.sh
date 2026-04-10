@@ -31,7 +31,7 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_PATH="${PROJECT_ROOT}/.venv"
-REQ_FILE="${PROJECT_ROOT}/direct/rest/service/requirements.txt"
+REQ_FILE="${PROJECT_ROOT}/requirements.txt"
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_SLEEP_SECONDS="${HEALTH_SLEEP_SECONDS:-1}"
 

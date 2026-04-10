@@ -103,7 +103,7 @@ read_benchmark_output_or_fail() {
     cat "${output_file}"
 }
 
-require_python_module "pika" "Install it with: pip install -r ${PROJECT_ROOT}/scripts/requirements_indirect.txt"
+require_python_module "pika" "Install it with: pip install -r ${PROJECT_ROOT}/requirements.txt"
 
 # -----------------------------
 # Scenario 1: Kill direct worker

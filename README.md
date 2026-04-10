@@ -45,9 +45,7 @@ Implementacion y documentacion por fases:
 
 Dependencias Python principales:
 
-- Arquitectura directa (REST): `direct/rest/service/requirements.txt`
-- Arquitectura indirecta: `scripts/requirements_indirect.txt`
-- Reporte y graficas: `scripts/requirements_report.txt`
+- Proyecto completo (REST, RabbitMQ, reportes): `requirements.txt`
 
 ## Inicio rapido
 
@@ -58,7 +56,7 @@ Dependencias Python principales:
 Ejemplo:
 
 ```bash
-pip install -r direct/rest/service/requirements.txt
+pip install -r requirements.txt
 bash scripts/start_direct_workers.sh 4
 python scripts/benchmark_unnumbered_rest.py --help
 python scripts/benchmark_numbered_rest.py --help
@@ -67,7 +65,7 @@ python scripts/benchmark_numbered_rest.py --help
 Para RabbitMQ:
 
 ```bash
-pip install -r scripts/requirements_indirect.txt
+pip install -r requirements.txt
 python scripts/benchmark_rabbitmq.py --help
 ```
 
@@ -85,12 +83,17 @@ python scripts/benchmark_rabbitmq.py --help
 
 ## Documentacion recomendada
 
-- `docs/05_como_ejecutar_parte2.md`
-- `docs/08_parte4_balanceo_directo.md`
-- `docs/09_parte5_rabbitmq.md`
-- `docs/11_parte6_hotspot_80_5.md`
-- `docs/12_parte7_fallos.md`
-- `docs/13_parte8_cierre_entrega.md`
+**Para tutorial de ejecución multimachine (Recomendado):**
+- `docs/16_tutorial_ejecucion_pruebas_multimachine.md` - Paso a paso completo de ejecución entre VMs
+
+**Documentación técnica por fase:**
+- `docs/02_entorno_vm.md` - Topología y entorno en AWS Academy
+- `docs/05_como_ejecutar_parte2.md` - Inicio rápido parte 2 (REST unnumbered + numbered)
+- `docs/08_parte4_balanceo_directo.md` - Arquitectura directa con NGINX
+- `docs/09_parte5_rabbitmq.md` - Arquitectura indirecta con RabbitMQ
+- `docs/11_parte6_hotspot_80_5.md` - Escenario hotspot (80/5)
+- `docs/12_parte7_fallos.md` - Inyección de fallos (opcional)
+- `docs/13_parte8_cierre_entrega.md` - Cierre de resultados y entrega
 
 ## Notas de trabajo
 

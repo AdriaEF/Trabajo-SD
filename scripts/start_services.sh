@@ -80,9 +80,7 @@ fi
 
 python3 -m venv "${VENV_PATH}"
 source "${VENV_PATH}/bin/activate"
-pip install -r "${PROJECT_ROOT}/direct/rest/service/requirements.txt"
-pip install -r "${SCRIPT_DIR}/requirements_indirect.txt"
-pip install -r "${SCRIPT_DIR}/requirements_report.txt"
+pip install -r "${PROJECT_ROOT}/requirements.txt"
 
 echo ""
 echo "================================================================================"
