@@ -90,7 +90,9 @@ echo ""
 
 sudo systemctl enable --now redis-server
 sudo systemctl enable --now rabbitmq-server
+sudo systemctl enable --now nginx
 sudo systemctl status redis-server --no-pager
 sudo systemctl status rabbitmq-server --no-pager
+sudo systemctl status nginx --no-pager
 
 echo "Servicios levantados correctamente"

@@ -5,7 +5,7 @@ set -euo pipefail
 # What it does:
 # 1) Checks and installs required system packages.
 #    Includes helper tools used by diagnostics and worker management scripts.
-# 2) Enables/starts Redis, RabbitMQ, and NGINX services.
+# 2) Optionally enables/starts Redis, RabbitMQ, and NGINX services.
 # 3) Creates Python virtual environments and installs requirements by component.
 #
 # Usage:
@@ -14,11 +14,11 @@ set -euo pipefail
 # Optional env toggles:
 #   INSTALL_SYSTEM=1        (default: 1)
 #   INSTALL_PYTHON_ENVS=1   (default: 1)
-#   ENABLE_SERVICES=1       (default: 1)
+#   ENABLE_SERVICES=1       (default: 0)
 
 INSTALL_SYSTEM="${INSTALL_SYSTEM:-1}"
 INSTALL_PYTHON_ENVS="${INSTALL_PYTHON_ENVS:-1}"
-ENABLE_SERVICES="${ENABLE_SERVICES:-1}"
+ENABLE_SERVICES="${ENABLE_SERVICES:-0}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY_REQ_FILE="$PROJECT_ROOT/requirements.txt"
