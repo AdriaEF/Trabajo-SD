@@ -79,9 +79,17 @@ check_service_status "redis-server"
 ensure_nginx_running
 
 echo "Precheck: RabbitMQ TCP ${RABBITMQ_IP}:5672"
-if ! nc -vz -w 2 "${RABBITMQ_IP}" 5672 >/dev/null 2>&1; then
-    echo "RabbitMQ TCP check failed: ${RABBITMQ_IP}:5672" >&2
-    exit 1
+if command -v nc >/dev/null 2>&1; then
+    if ! nc -vz -w 2 "${RABBITMQ_IP}" 5672 >/dev/null 2>&1; then
+        echo "RabbitMQ TCP check failed (nc): ${RABBITMQ_IP}:5672" >&2
+        exit 1
+    fi
+else
+    if ! timeout 3 bash -c "echo '' > /dev/tcp/${RABBITMQ_IP}/5672" 2>/dev/null; then
+        echo "RabbitMQ TCP check failed (/dev/tcp): ${RABBITMQ_IP}:5672" >&2
+        echo "Tip: install netcat-openbsd for nc-based checks." >&2
+        exit 1
+    fi
 fi
 
 echo "Precheck: remote workers"
