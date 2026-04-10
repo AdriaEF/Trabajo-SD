@@ -17,9 +17,9 @@ set -euo pipefail
 #   bash scripts/run_part7_multimachine_fault_injection.sh
 #
 # Notes:
-# - Run this script on the machine that hosts NGINX and runs local workers.
-# - Remote workers must already be running on other machine(s).
-# - Uses local workers only for fault injection (killing/restarting).
+# - Run this script on the machine that hosts NGINX and runs the local workers for each iteration.
+# - Remote workers must already be running on other machine(s) if DIRECT_UPSTREAM_SERVERS is used.
+# - The script iterates over WORKERS_LIST so fault injection is measured at 1/2/4 workers.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -40,6 +40,7 @@ REQUEST_QUEUE="${REQUEST_QUEUE:-tickets.buy}"
 REST_CONCURRENCY="${REST_CONCURRENCY:-128}"
 INFLIGHT="${INFLIGHT:-256}"
 REDIS_RESTART_CMD="${REDIS_RESTART_CMD:-sudo systemctl restart redis}"
+WORKERS_LIST="${WORKERS_LIST:-1 2 4}"
 
 # Determine BENCH_PYTHON
 BENCH_PYTHON="${PROJECT_ROOT}/scripts/.venv-indirect/bin/python"
@@ -64,23 +65,24 @@ if [[ -z "${TOTAL_WORKERS}" ]]; then
     fi
 fi
 
-LOCAL_WORKER_COUNT="$((TOTAL_WORKERS - REMOTE_WORKER_COUNT))"
-
-if [[ "${LOCAL_WORKER_COUNT}" -lt 0 ]]; then
-    echo "TOTAL_WORKERS (${TOTAL_WORKERS}) cannot be smaller than remote workers (${REMOTE_WORKER_COUNT})" >&2
-    exit 1
-fi
+for workers_count in ${WORKERS_LIST}; do
+    if ! [[ "${workers_count}" =~ ^[0-9]+$ ]] || [[ "${workers_count}" -lt 1 ]]; then
+        echo "Invalid workers value in WORKERS_LIST: ${workers_count}" >&2
+        exit 1
+    fi
+done
 
 mkdir -p "${RESULTS_DIR}"
 
-echo "scenario,architecture,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error,notes" > "${OUT_FILE}"
+echo "scenario,workers,architecture,model,operations,elapsed_seconds,throughput_ops_s,success,sold_out,seat_taken,duplicate,error,notes" > "${OUT_FILE}"
 
 append_row() {
     local scenario="$1"
-    local architecture="$2"
-    local model="$3"
-    local output="$4"
-    local notes="$5"
+    local workers="$2"
+    local architecture="$3"
+    local model="$4"
+    local output="$5"
+    local notes="$6"
 
     operations=$(echo "${output}" | awk -F': ' '/Operations:/ {print $2}')
     elapsed=$(echo "${output}" | awk -F': ' '/Elapsed seconds:/ {print $2}')
@@ -96,7 +98,7 @@ append_row() {
     duplicate=${duplicate:-0}
     error=${error:-0}
 
-    echo "${scenario},${architecture},${model},${operations},${elapsed},${throughput},${success},${sold_out},${seat_taken},${duplicate},${error},${notes}" >> "${OUT_FILE}"
+    echo "${scenario},${workers},${architecture},${model},${operations},${elapsed},${throughput},${success},${sold_out},${seat_taken},${duplicate},${error},${notes}" >> "${OUT_FILE}"
 }
 
 check_correctness_note() {
@@ -189,14 +191,32 @@ write_nginx_conf() {
     sudo systemctl reload nginx
 }
 
-# Only run fault injection scenarios if we have local workers
-if [[ "${LOCAL_WORKER_COUNT}" -gt 0 ]]; then
+for total_workers in ${WORKERS_LIST}; do
+    if [[ -z "${total_workers}" ]]; then
+        continue
+    fi
+
+    if ! [[ "${total_workers}" =~ ^[0-9]+$ ]] || [[ "${total_workers}" -lt 1 ]]; then
+        echo "Invalid workers value in WORKERS_LIST: ${total_workers}" >&2
+        exit 1
+    fi
+
+    local_worker_count="$((total_workers - REMOTE_WORKER_COUNT))"
+    if [[ "${local_worker_count}" -lt 0 ]]; then
+        echo "Computed LOCAL_WORKER_COUNT (${local_worker_count}) is invalid for total_workers=${total_workers}" >&2
+        exit 1
+    fi
+
+    echo "[Fault] Running with ${total_workers} total workers (${local_worker_count} local, ${REMOTE_WORKER_COUNT} remote)"
+
+    # Only run local fault injection scenarios if we have local workers in this iteration
+    if [[ "${local_worker_count}" -gt 0 ]]; then
 
     # Scenario 1: Kill direct worker
     echo "[Fault] Scenario 1: kill one local direct worker"
     bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
-    bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${LOCAL_WORKER_COUNT}"
-    write_nginx_conf "${LOCAL_WORKER_COUNT}"
+    bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${local_worker_count}"
+    write_nginx_conf "${local_worker_count}"
     sleep 2
 
     curl -s -X POST "${BASE_URL}/admin/reset/numbered" >/dev/null
@@ -225,12 +245,12 @@ if [[ "${LOCAL_WORKER_COUNT}" -gt 0 ]]; then
     rm -f "${direct_output_file}"
     direct_success=$(echo "${direct_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
     direct_correctness=$(check_correctness_note "numbered_hotspot" "${direct_success}" "after_kill")
-    append_row "kill_worker" "direct" "numbered_hotspot" "${direct_output}" "${direct_note}_${direct_correctness}"
+    append_row "kill_worker" "${total_workers}" "direct" "numbered_hotspot" "${direct_output}" "${direct_note}_${direct_correctness}"
 
     # Scenario 2: Kill RabbitMQ worker
     echo "[Fault] Scenario 2: kill one local RabbitMQ worker"
     bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
-    bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${LOCAL_WORKER_COUNT}"
+    bash "${PROJECT_ROOT}/scripts/start_rabbitmq_workers.sh" "${local_worker_count}"
     sleep 2
 
     bash "${PROJECT_ROOT}/scripts/reset_ticket_state.sh"
@@ -259,38 +279,39 @@ if [[ "${LOCAL_WORKER_COUNT}" -gt 0 ]]; then
     rm -f "${rabbit_output_file}"
     rabbit_success=$(echo "${rabbit_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
     rabbit_correctness=$(check_correctness_note "numbered_hotspot" "${rabbit_success}" "after_kill")
-    append_row "kill_worker" "indirect" "numbered_hotspot" "${rabbit_output}" "${rabbit_note}_${rabbit_correctness}"
+    append_row "kill_worker" "${total_workers}" "indirect" "numbered_hotspot" "${rabbit_output}" "${rabbit_note}_${rabbit_correctness}"
 
-else
-    echo "Skipping local worker fault injection scenarios (no local workers configured)"
-fi
+    else
+        echo "Skipping local worker fault injection scenarios for ${total_workers} total workers (no local workers configured)"
+    fi
 
-# Scenario 3: Redis restart during load
-echo "[Fault] Scenario 3: restart Redis during load"
-bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
-bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${LOCAL_WORKER_COUNT}"
-write_nginx_conf "${LOCAL_WORKER_COUNT}"
-sleep 2
+    # Scenario 3: Redis restart during load
+    echo "[Fault] Scenario 3: restart Redis during load"
+    bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/start_direct_workers.sh" "${local_worker_count}"
+    write_nginx_conf "${local_worker_count}"
+    sleep 2
 
-curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
+    curl -s -X POST "${BASE_URL}/admin/reset/unnumbered" >/dev/null
 
-redis_output_file=$(mktemp)
-start_background_benchmark redis_bench_pid "${redis_output_file}" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
-sleep 2
+    redis_output_file=$(mktemp)
+    start_background_benchmark redis_bench_pid "${redis_output_file}" "python3 ${PROJECT_ROOT}/scripts/benchmark_unnumbered_rest.py --file ${UNNUMBERED_BENCH} --base-url ${BASE_URL} --concurrency ${REST_CONCURRENCY}"
+    sleep 2
 
-set +e
-bash -lc "${REDIS_RESTART_CMD}"
-redis_cmd_exit=$?
-set -e
+    set +e
+    bash -lc "${REDIS_RESTART_CMD}"
+    redis_cmd_exit=$?
+    set -e
 
-wait "${redis_bench_pid}" || true
-redis_output=$(read_benchmark_output_or_fail "${redis_output_file}")
-rm -f "${redis_output_file}"
-redis_success=$(echo "${redis_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
-redis_correctness=$(check_correctness_note "unnumbered" "${redis_success}" "after_redis_restart")
-append_row "restart_redis" "direct" "unnumbered" "${redis_output}" "redis_restart_cmd_exit_${redis_cmd_exit}_${redis_correctness}"
+    wait "${redis_bench_pid}" || true
+    redis_output=$(read_benchmark_output_or_fail "${redis_output_file}")
+    rm -f "${redis_output_file}"
+    redis_success=$(echo "${redis_output}" | awk -F': ' '/SUCCESS:/ {print $2}')
+    redis_correctness=$(check_correctness_note "unnumbered" "${redis_success}" "after_redis_restart")
+    append_row "restart_redis" "${total_workers}" "direct" "unnumbered" "${redis_output}" "redis_restart_cmd_exit_${redis_cmd_exit}_${redis_correctness}"
 
-bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
-bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/stop_direct_workers.sh" || true
+    bash "${PROJECT_ROOT}/scripts/stop_rabbitmq_workers.sh" || true
+done
 
 echo "Fault injection results written to ${OUT_FILE}"
